@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Revisor de Textos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+/* ================= Tokens ================= */
+:root{
+  --bg:#f4f5f8; --surface:#ffffff; --surface-2:#f3f4f7; --surface-3:#e9ebf0;
+  --border:#e4e7ec; --border-strong:#d0d5dd;
+  --text:#121722; --text-2:#344054; --muted:#667085;
+  --primary:#4f46e5; --primary-ink:#ffffff; --primary-soft:#eef0ff;
+  --ok:#0f8a5f; --ok-soft:#e3f6ed; --warn:#b54708; --warn-soft:#fef3e2; --danger:#d1342b; --danger-soft:#fdecea;
+  --c-ortografia:#d92d20; --c-gramatica:#4f46e5; --c-pontuacao:#c4620a; --c-tipografia:#7a5af8; --c-estilo:#0e8a7d; --c-outros:#667085;
+  --sb-bg:#0e1220; --sb-text:#c7cdda; --sb-muted:#7c859a; --sb-hover:#181d2e; --sb-active:#222944; --sb-border:#1d2335;
+  --shadow-sm:0 1px 2px rgba(16,24,40,.05);
+  --shadow:0 1px 2px rgba(16,24,40,.05),0 6px 20px rgba(16,24,40,.06);
+  --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c0f15; --surface:#141821; --surface-2:#1a1f2a; --surface-3:#232936;
+    --border:#252b38; --border-strong:#333b4b;
+    --text:#e8eaf0; --text-2:#c3c8d4; --muted:#8d96a8;
+    --primary:#8188ff; --primary-ink:#0c0f15; --primary-soft:#1e2147;
+    --ok:#3ccb95; --ok-soft:#13302a; --warn:#f5a524; --warn-soft:#33270f; --danger:#ff6b61; --danger-soft:#3a1a1a;
+    --c-ortografia:#ff6b61; --c-gramatica:#8188ff; --c-pontuacao:#f5a524; --c-tipografia:#a993ff; --c-estilo:#2dd4bf; --c-outros:#98a2b3;
+    --sb-bg:#080a10; --sb-hover:#11151f; --sb-active:#1a1f30; --sb-border:#161b27;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.3); --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c0f15; --surface:#141821; --surface-2:#1a1f2a; --surface-3:#232936;
+  --border:#252b38; --border-strong:#333b4b;
+  --text:#e8eaf0; --text-2:#c3c8d4; --muted:#8d96a8;
+  --primary:#8188ff; --primary-ink:#0c0f15; --primary-soft:#1e2147;
+  --ok:#3ccb95; --ok-soft:#13302a; --warn:#f5a524; --warn-soft:#33270f; --danger:#ff6b61; --danger-soft:#3a1a1a;
+  --c-ortografia:#ff6b61; --c-gramatica:#8188ff; --c-pontuacao:#f5a524; --c-tipografia:#a993ff; --c-estilo:#2dd4bf; --c-outros:#98a2b3;
+  --sb-bg:#080a10; --sb-hover:#11151f; --sb-active:#1a1f30; --sb-border:#161b27;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.3); --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+}
+
+/* ================= Base ================= */
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:14.5px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+button,select,input,textarea{font:inherit;color:inherit}
+svg{flex:none}
+.hidden{display:none!important}
+.muted{color:var(--muted)}
+
+/* ================= Estrutura ================= */
+.app{display:grid;grid-template-columns:252px minmax(0,1fr);min-height:100vh}
+
+.sidebar{position:sticky;top:0;height:100vh;background:var(--sb-bg);color:var(--sb-text);display:flex;flex-direction:column;padding:18px 14px;z-index:40}
+.brand{display:flex;align-items:center;gap:11px;padding:4px 8px 20px}
+.brand .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#4338ca);color:#fff;display:grid;place-items:center;box-shadow:0 4px 12px rgba(79,70,229,.35)}
+.brand b{display:block;color:#fff;font-size:16px;letter-spacing:-.01em}
+.brand small{display:block;color:var(--sb-muted);font-size:12px}
+.nav-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--sb-muted);padding:14px 10px 6px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{display:flex;align-items:center;gap:11px;width:100%;border:0;background:transparent;color:var(--sb-text);padding:9px 10px;border-radius:9px;cursor:pointer;font-weight:500;text-align:left;transition:background .15s,color .15s}
+.nav button svg{width:18px;height:18px;opacity:.85}
+.nav button:hover{background:var(--sb-hover);color:#fff}
+.nav button.on{background:var(--sb-active);color:#fff}
+.nav button.on svg{opacity:1;color:#a5a8ff}
+.nav button:disabled{opacity:.4;cursor:not-allowed;background:transparent}
+.nav .badge{margin-left:auto;font-size:11.5px;background:#2b3252;color:#d4d7ff;padding:1px 8px;border-radius:99px}
+.sb-foot{margin-top:auto;border-top:1px solid var(--sb-border);padding-top:14px}
+.svc{display:flex;align-items:center;gap:9px;padding:8px 10px;font-size:12.5px;color:var(--sb-muted)}
+.svc i{width:8px;height:8px;border-radius:50%;background:#3ccb95;box-shadow:0 0 0 3px rgba(60,203,149,.15)}
+.scrim{display:none}
+
+.main{min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:30;height:64px;display:flex;align-items:center;gap:12px;padding:0 28px;background:color-mix(in srgb,var(--surface) 90%,transparent);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.topbar h1{font-size:17px;margin:0;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .crumb{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .titles{min-width:0}
+.spacer{flex:1}
+.btn.menu-btn{display:none}
+.page{width:100%;max-width:1480px;margin:0 auto;padding:24px 28px 48px}
+
+/* ================= Botões ================= */
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);background:var(--surface);padding:8px 13px;border-radius:9px;cursor:pointer;font-weight:500;font-size:13.5px;white-space:nowrap;box-shadow:var(--shadow-sm);transition:background .15s,border-color .15s}
+.btn:hover{background:var(--surface-2);border-color:var(--border-strong)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
+.btn.primary:hover{filter:brightness(1.08);background:var(--primary)}
+.btn.ghost{border-color:transparent;background:transparent;box-shadow:none}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn.icon{padding:8px}
+.btn svg{width:17px;height:17px}
+
+/* ================= Cartões ================= */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card-h{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--border)}
+.card-h h2{font-size:15px;margin:0;letter-spacing:-.01em}
+.card-h p{margin:0;font-size:12.5px;color:var(--muted)}
+.card-b{padding:20px}
+
+/* ================= Início ================= */
+.welcome{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.welcome h2{font-size:24px;margin:0 0 4px;letter-spacing:-.02em}
+.welcome p{margin:0;color:var(--muted)}
+.stats4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.stat{padding:16px 18px;display:flex;gap:14px;align-items:center}
+.stat .ic{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;flex:none}
+.stat .ic svg{width:20px;height:20px}
+.stat .v{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.stat .l{font-size:12.5px;color:var(--muted)}
+.home-grid{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px;align-items:start}
+.drop{display:block;border:2px dashed var(--border-strong);border-radius:12px;padding:34px 20px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;background:var(--surface-2)}
+.drop:hover,.drop.over{border-color:var(--primary);background:var(--primary-soft)}
+.drop .ic{width:50px;height:50px;margin:0 auto 12px;border-radius:13px;background:var(--surface);color:var(--primary);display:grid;place-items:center;box-shadow:var(--shadow-sm)}
+.drop .ic svg{width:24px;height:24px}
+.drop strong{font-size:15.5px}
+.drop .fmt{margin-top:6px;color:var(--muted);font-size:12.5px}
+.fmts{display:flex;gap:6px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.fmts span{font-size:11px;font-weight:600;letter-spacing:.04em;padding:3px 8px;border-radius:6px;background:var(--surface);border:1px solid var(--border);color:var(--text-2)}
+.divider{display:flex;align-items:center;gap:12px;margin:18px 0 12px;color:var(--muted);font-size:12.5px}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.paste{width:100%;min-height:130px;resize:vertical;border:1px solid var(--border);background:var(--surface);border-radius:10px;padding:12px 14px;outline:none;line-height:1.55}
+.paste:focus,.input:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.opts{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+.field{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);padding:7px 11px;border-radius:9px;font-size:13.5px}
+.field select{border:0;background:transparent;outline:none;cursor:pointer;color:var(--text)}
+.field select option{background:var(--surface)}
+.switch{display:flex;align-items:center;gap:9px;font-size:13.5px;cursor:pointer;user-select:none}
+.switch input{appearance:none;width:34px;height:20px;border-radius:99px;background:var(--surface-3);position:relative;cursor:pointer;transition:background .15s;margin:0}
+.switch input::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.switch input:checked{background:var(--primary)}
+.switch input:checked::after{transform:translateX(14px)}
+.note{display:flex;gap:8px;align-items:flex-start;margin-top:16px;font-size:12.5px;color:var(--muted)}
+.note svg{width:15px;height:15px;margin-top:2px}
+
+.hist{list-style:none;margin:0;padding:6px}
+.hist li{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:background .15s}
+.hist li:hover{background:var(--surface-2)}
+.hist .doc-ic{width:36px;height:36px;border-radius:9px;background:var(--surface-2);color:var(--muted);display:grid;place-items:center;flex:none}
+.hist li:hover .doc-ic{background:var(--surface)}
+.hist .info{min-width:0;flex:1}
+.hist .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist .mt{font-size:12px;color:var(--muted)}
+.pill{font-size:12.5px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.hist .del{opacity:0;border:0;background:none;color:var(--muted);cursor:pointer;padding:4px;border-radius:6px}
+.hist li:hover .del{opacity:1}
+.hist .del:hover{color:var(--danger);background:var(--danger-soft)}
+.empty{text-align:center;padding:36px 20px;color:var(--muted)}
+.empty .ic{width:48px;height:48px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;margin:0 auto 10px}
+.empty strong{display:block;color:var(--text);margin-bottom:2px}
+
+/* ================= Revisão ================= */
+.kpis{display:grid;grid-template-columns:minmax(260px,1.6fr) repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px}
+.kpi{padding:14px 18px;display:flex;flex-direction:column;justify-content:center}
+.kpi .l{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:7px}
+.kpi .l i{width:8px;height:8px;border-radius:50%}
+.kpi .v{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.2;margin-top:2px}
+.kpi .s{font-size:12px;color:var(--muted)}
+.kpi.score{flex-direction:row;align-items:center;justify-content:flex-start;gap:16px}
+.ring{--p:0;--gc:var(--primary);width:76px;height:76px;border-radius:50%;flex:none;display:grid;place-items:center;background:conic-gradient(var(--gc) calc(var(--p) * 1%),var(--surface-3) 0);transition:background .4s}
+.ring .in{width:62px;height:62px;border-radius:50%;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05}
+.ring b{font-size:20px;letter-spacing:-.03em}
+.ring span{font-size:10.5px;color:var(--muted)}
+.score .t{font-weight:600;font-size:15px}
+.score .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.delta{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:600;padding:2px 7px;border-radius:99px;background:var(--ok-soft);color:var(--ok);margin-top:5px}
+
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:16px}
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;padding:6px 12px;border-radius:7px;cursor:pointer;font-weight:500;font-size:13px;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
+.seg button.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm)}
+.seg .n{font-size:11.5px;background:var(--surface-3);padding:0 6px;border-radius:99px;color:var(--text-2)}
+.seg button.on .n{background:var(--primary-soft);color:var(--primary)}
+
+.work{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:16px;align-items:start}
+.pane{height:clamp(480px,calc(100vh - 292px),2400px);display:flex;flex-direction:column;overflow:hidden}
+.pane-h{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--border);min-height:54px}
+.pane-h .ttl{font-weight:600;font-size:14px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted);margin-left:auto}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:12px;height:3px;border-radius:2px}
+.doc-wrap{position:relative;flex:1;min-height:0;display:flex}
+.doc{flex:1;padding:34px 48px;overflow:auto;font:17px/1.8 "Source Serif 4",Georgia,serif;white-space:pre-wrap;word-wrap:break-word;color:var(--text)}
+.doc-edit{flex:1;width:100%;border:0;outline:none;background:transparent;resize:none;padding:34px 48px;font:17px/1.8 "Source Serif 4",Georgia,serif;color:var(--text)}
+.err{cursor:pointer;border-radius:3px;text-decoration:underline wavy;text-decoration-thickness:1.5px;text-underline-offset:4px;text-decoration-skip-ink:none;transition:background .15s}
+.err:hover,.err.active{background:var(--surface-2)}
+.err.active{outline:2px solid var(--primary);outline-offset:1px}
+.c-ortografia{text-decoration-color:var(--c-ortografia)}
+.c-gramatica{text-decoration-color:var(--c-gramatica)}
+.c-pontuacao{text-decoration-color:var(--c-pontuacao)}
+.c-tipografia{text-decoration-color:var(--c-tipografia)}
+.c-estilo{text-decoration-color:var(--c-estilo)}
+.c-outros{text-decoration-color:var(--c-outros)}
+
+.loading{position:absolute;inset:0;background:color-mix(in srgb,var(--surface) 88%,transparent);display:grid;place-items:center;z-index:5}
+.loading .box{text-align:center;width:min(340px,80%)}
+.spinner{width:34px;height:34px;border:3px solid var(--surface-3);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.progress{height:6px;background:var(--surface-3);border-radius:99px;overflow:hidden;margin-top:12px}
+.progress i{display:block;height:100%;width:0;background:var(--primary);transition:width .3s}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:12.5px;font-weight:500}
+.chip .dot{width:8px;height:8px;border-radius:50%}
+.chip .n{color:var(--muted)}
+.chip.on{background:var(--text);color:var(--surface);border-color:var(--text)}
+.chip.on .n{color:inherit;opacity:.7}
+.side-actions{display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border)}
+.side-actions .btn{flex:1;justify-content:center;font-size:13px;padding:7px 10px}
+.scroll{overflow:auto;flex:1;min-height:0}
+.list{padding:10px}
+.sg{border:1px solid var(--border);border-left:3px solid var(--cc);border-radius:10px;padding:12px 13px;margin-bottom:8px;background:var(--surface);transition:border-color .15s,box-shadow .15s;cursor:pointer}
+.sg:hover{box-shadow:var(--shadow-sm);border-color:var(--border-strong);border-left-color:var(--cc)}
+.sg.active{border-color:var(--primary);border-left-color:var(--cc);box-shadow:0 0 0 3px var(--primary-soft)}
+.sg .head{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--cc)}
+.sg .head .sh{color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sg .msg{margin:6px 0 8px;font-size:13.5px;color:var(--text-2)}
+.sg .ctx{font-size:13.5px;color:var(--muted);background:var(--surface-2);border-radius:7px;padding:7px 10px;font-family:"Source Serif 4",Georgia,serif}
+.sg .ctx mark{background:transparent;color:var(--danger);font-weight:600;text-decoration:line-through}
+.sugs{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.sug{border:1px solid color-mix(in srgb,var(--ok) 30%,transparent);background:var(--ok-soft);color:var(--ok);font-weight:600;padding:4px 10px;border-radius:7px;cursor:pointer;font-size:13.5px}
+.sug:hover{filter:brightness(.96)}
+.sug.empty{font-style:italic}
+.links{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:9px;font-size:12.5px}
+.link{border:0;background:none;padding:0;color:var(--muted);cursor:pointer}
+.link:hover{color:var(--text);text-decoration:underline}
+
+/* Análise */
+.ana{padding:16px 18px}
+.ana h3{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:4px 0 12px;font-weight:600}
+.ana section+section{margin-top:22px;padding-top:18px;border-top:1px solid var(--border)}
+.bar-row{display:grid;grid-template-columns:96px 1fr 34px;align-items:center;gap:10px;font-size:13px;margin-bottom:9px}
+.bar-row .track{height:8px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.bar-row .track i{display:block;height:100%;border-radius:99px;transition:width .4s}
+.bar-row b{text-align:right;font-variant-numeric:tabular-nums}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.metric{background:var(--surface-2);border-radius:10px;padding:10px 12px}
+.metric .v{font-size:18px;font-weight:700;letter-spacing:-.01em}
+.metric .l{font-size:12px;color:var(--muted)}
+.read-meter{height:8px;border-radius:99px;background:linear-gradient(90deg,var(--danger),var(--warn),var(--ok));position:relative;margin:10px 0 6px}
+.read-meter i{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--surface);border:3px solid var(--text);transform:translate(-50%,-50%)}
+.read-scale{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.rules{list-style:none;margin:0;padding:0}
+.rules li{display:flex;gap:10px;align-items:center;padding:7px 0;font-size:13px;border-bottom:1px dashed var(--border)}
+.rules li:last-child{border-bottom:0}
+.rules .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.rules span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rules b{font-variant-numeric:tabular-nums}
+
+/* Menu suspenso */
+.menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;padding:6px;min-width:250px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.16)}
+.menu button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:9px 10px;border-radius:8px;cursor:pointer;text-align:left;font-size:13.5px}
+.menu button:hover{background:var(--surface-2)}
+.menu button small{display:block;color:var(--muted);font-size:12px}
+.menu svg{width:17px;height:17px;color:var(--muted)}
+
+/* Popover */
+.pop{position:fixed;z-index:50;width:330px;max-width:calc(100vw - 24px);background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 44px rgba(0,0,0,.2);padding:4px}
+.pop .sg{border:0;margin:0;cursor:default;box-shadow:none}
+
+/* Modal */
+.modal{position:fixed;inset:0;background:rgba(8,10,16,.55);display:grid;place-items:center;z-index:60;padding:16px}
+.dialog{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(520px,100%);padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.dialog h2{margin:0 0 4px;font-size:18px}
+.dialog p{margin:0 0 14px;color:var(--muted);font-size:13.5px}
+.dialog label{display:block;font-size:13px;font-weight:600;margin:12px 0 5px}
+.input{width:100%;border:1px solid var(--border);background:var(--surface-2);border-radius:9px;padding:9px 11px;outline:none}
+textarea.input{min-height:150px;resize:vertical}
+.dialog .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+
+/* Toast */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--text);color:var(--surface);padding:10px 16px;border-radius:10px;font-size:13.5px;transition:all .25s;z-index:70;pointer-events:none;max-width:calc(100vw - 32px);box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ================= Responsivo ================= */
+@media (max-width:1280px){
+  .kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .kpi.score{grid-column:1/-1}
+  .pane{height:clamp(480px,calc(100vh - 380px),2400px)}
+}
+@media (max-width:1100px){
+  .work{grid-template-columns:minmax(0,1fr)}
+  .pane{height:auto}
+  .doc,.doc-edit{min-height:50vh}
+  .doc-edit{height:60vh}
+  .side .scroll{max-height:70vh}
+  .home-grid{grid-template-columns:minmax(0,1fr)}
+  .stats4{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:900px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed;left:0;top:0;bottom:0;width:264px;transform:translateX(-100%);transition:transform .2s}
+  .app.nav-open .sidebar{transform:none}
+  .app.nav-open .scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:35}
+  .btn.menu-btn{display:inline-flex}
+  .topbar{padding:0 16px}
+  .page{padding:16px 16px 40px}
+}
+@media (max-width:600px){
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .stats4{gap:10px}
+  .stat{padding:12px;gap:10px}
+  .stat .ic{width:36px;height:36px}
+  .stat .v{font-size:18px}
+  .doc,.doc-edit{padding:20px 18px}
+  .toolbar .btn .lbl{display:none}
+  .legend{display:none}
+  .topbar .hide-sm{display:none}
+  .welcome h2{font-size:20px}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ================= Barra lateral ================= -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h11v2"/><path d="M9.5 5v12"/><path d="m13 15 3 3 5-6"/></svg></div>
+      <div><b>Revisor</b><small>Revisão profissional de textos</small></div>
+    </div>
+
+    <div class="nav-label">Menu</div>
+    <nav class="nav">
+      <button data-nav="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Painel</button>
+      <button data-nav="review" id="navReview" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg>Revisão atual<span class="badge hidden" id="navBadge">0</span></button>
+      <button data-nav="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>Histórico</button>
+    </nav>
+
+    <div class="nav-label">Ferramentas</div>
+    <nav class="nav">
+      <button data-nav="dict"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>Dicionário pessoal</button>
+      <button data-nav="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Configurações</button>
+      <button data-nav="theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>Alternar tema</button>
+    </nav>
+
+    <div class="sb-foot">
+      <div class="svc"><i id="svcDot"></i><span id="svcName">LanguageTool · serviço público</span></div>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <!-- ================= Conteúdo ================= -->
+  <div class="main">
+    <header class="topbar">
+      <button class="btn ghost icon menu-btn" id="menuBtn" aria-label="Abrir menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <div class="titles">
+        <h1 id="pageTitle">Painel</h1>
+        <div class="crumb" id="pageCrumb">Visão geral das suas revisões</div>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn primary" id="topNew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="hide-sm">Nova revisão</span></button>
+    </header>
+
+    <!-- ================= PAINEL (INÍCIO) ================= -->
+    <section class="page" id="home">
+      <div class="welcome">
+        <div>
+          <h2>Revise textos com precisão</h2>
+          <p>Ortografia, gramática, pontuação e estilo, com nota de qualidade e relatório completo.</p>
+        </div>
+      </div>
+
+      <div class="stats4">
+        <div class="card stat"><div class="ic" style="background:var(--primary-soft);color:var(--primary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div><div><div class="v" id="hsDocs">0</div><div class="l">Textos revisados</div></div></div>
+        <div class="card stat"><div class="ic" style="background:var(--ok-soft);color:var(--ok)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg></div><div><div class="v" id="hsAvg">–</div><div class="l">Nota média</div></div></div>
+        <div class="card stat"><div class="ic" style="background:var(--warn-soft);color:var(--warn)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><div><div class="v" id="hsFixed">0</div><div class="l">Erros corrigidos</div></div></div>
+        <div class="card stat"><div class="ic" style="background:color-mix(in srgb,var(--c-estilo) 14%,transparent);color:var(--c-estilo)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></div><div><div class="v" id="hsWords">0</div><div class="l">Palavras analisadas</div></div></div>
+      </div>
+
+      <div class="home-grid">
+        <div class="card">
+          <div class="card-h"><div><h2>Nova revisão</h2><p>Envie um arquivo ou cole o texto</p></div></div>
+          <div class="card-b">
+            <label class="drop" id="drop">
+              <input type="file" id="fileInput" class="hidden" accept=".txt,.md,.docx,.pdf,.html,.htm,.rtf,.csv">
+              <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg></div>
+              <strong>Arraste o arquivo aqui ou clique para selecionar</strong>
+              <div class="fmt">Até 15 MB</div>
+              <div class="fmts"><span>DOCX</span><span>PDF</span><span>TXT</span><span>MD</span><span>HTML</span><span>RTF</span></div>
+            </label>
+
+            <div class="divider">ou cole o texto</div>
+            <textarea class="paste" id="pasteArea" placeholder="Cole aqui o texto que deseja revisar…"></textarea>
+
+            <div class="opts">
+              <div class="field">Idioma
+                <select id="lang">
+                  <option value="pt-BR" selected>Português (Brasil)</option>
+                  <option value="pt-PT">Português (Portugal)</option>
+                  <option value="en-US">Inglês (EUA)</option>
+                  <option value="en-GB">Inglês (Reino Unido)</option>
+                  <option value="es">Espanhol</option>
+                  <option value="fr">Francês</option>
+                  <option value="de-DE">Alemão</option>
+                  <option value="it">Italiano</option>
+                </select>
+              </div>
+              <label class="switch" title="Ativa regras extras de estilo e formalidade"><input type="checkbox" id="picky"> Revisão rigorosa</label>
+              <div class="spacer"></div>
+              <button class="btn primary" id="btnPaste"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Revisar texto</button>
+            </div>
+
+            <div class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><span>O texto é enviado ao LanguageTool para análise. Para dados sigilosos, configure um servidor próprio em Configurações.</span></div>
+          </div>
+        </div>
+
+        <div class="card" id="historyCard">
+          <div class="card-h"><div><h2>Revisões recentes</h2><p>Salvas apenas neste navegador</p></div></div>
+          <ul class="hist" id="histList"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= REVISÃO ================= -->
+    <section class="page hidden" id="workspace">
+      <div class="kpis">
+        <div class="card kpi score">
+          <div class="ring" id="ring"><div class="in"><b id="gradeVal">–</b><span>de 10</span></div></div>
+          <div style="min-width:0">
+            <div class="t" id="gradeLbl">Nota do texto</div>
+            <div class="sub" id="gradeSub"></div>
+            <div class="delta hidden" id="gradeDelta"></div>
+          </div>
+        </div>
+        <div class="card kpi"><div class="l"><i style="background:var(--text-2)"></i>Encontrados</div><div class="v" id="cFound">0</div><div class="s">na última análise</div></div>
+        <div class="card kpi"><div class="l"><i style="background:var(--danger)"></i>Pendentes</div><div class="v" id="cPending" style="color:var(--danger)">0</div><div class="s">aguardando revisão</div></div>
+        <div class="card kpi"><div class="l"><i style="background:var(--ok)"></i>Corrigidos</div><div class="v" id="cFixed" style="color:var(--ok)">0</div><div class="s" id="cFixedPct">0% do total</div></div>
+        <div class="card kpi"><div class="l"><i style="background:var(--muted)"></i>Ignorados</div><div class="v" id="cIgnored">0</div><div class="s">não contam na nota</div></div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn" id="btnUndo" disabled title="Desfazer (Ctrl+Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg><span class="lbl">Desfazer</span></button>
+        <button class="btn" id="btnEdit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span class="lbl" id="editLbl">Editar texto</span></button>
+        <button class="btn" id="btnRecheck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/></svg><span class="lbl">Verificar novamente</span></button>
+        <div class="spacer"></div>
+        <button class="btn" id="btnCopy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="lbl">Copiar</span></button>
+        <div style="position:relative">
+          <button class="btn primary" id="btnDownload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg><span class="lbl">Exportar</span></button>
+          <div id="dlMenu" class="menu hidden">
+            <button data-dl="report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg><span>Relatório da revisão<small>Nota, estatísticas e erros (.html)</small></span></button>
+            <button data-dl="docx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span>Texto revisado · Word<small>Abre no Microsoft Word (.doc)</small></span></button>
+            <button data-dl="txt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>Texto revisado · simples<small>Arquivo de texto (.txt)</small></span></button>
+            <button data-dl="html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg><span>Texto revisado · web<small>Página HTML (.html)</small></span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="work">
+        <div class="card pane">
+          <div class="pane-h">
+            <span class="ttl">Documento</span>
+            <div class="legend">
+              <span><i style="background:var(--c-ortografia)"></i>Ortografia</span>
+              <span><i style="background:var(--c-gramatica)"></i>Gramática</span>
+              <span><i style="background:var(--c-pontuacao)"></i>Pontuação</span>
+              <span><i style="background:var(--c-estilo)"></i>Estilo</span>
+              <span><i style="background:var(--c-tipografia)"></i>Tipografia</span>
+            </div>
+          </div>
+          <div class="doc-wrap">
+            <div class="doc" id="doc"></div>
+            <textarea class="doc-edit hidden" id="docEdit" spellcheck="false"></textarea>
+            <div class="loading hidden" id="loading">
+              <div class="box">
+                <div class="spinner"></div>
+                <strong id="loadTitle">Analisando o texto…</strong>
+                <div id="loadMsg" style="color:var(--muted);font-size:13px;margin-top:4px"></div>
+                <div class="progress"><i id="loadBar"></i></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="card pane side">
+          <div class="pane-h">
+            <div class="seg" id="sideTabs">
+              <button data-side="sug" class="on">Sugestões <span class="n" id="sugCount">0</span></button>
+              <button data-side="ana">Análise do texto</button>
+            </div>
+          </div>
+          <div id="sidSug" style="display:flex;flex-direction:column;flex:1;min-height:0">
+            <div class="chips" id="tabs"></div>
+            <div class="side-actions">
+              <button class="btn" id="btnApplyAll"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Aplicar todas</button>
+              <button class="btn" id="btnIgnoreAll">Ignorar todas</button>
+            </div>
+            <div class="scroll"><div class="list" id="list"></div></div>
+          </div>
+          <div class="scroll hidden" id="sidAna"><div class="ana" id="ana"></div></div>
+        </aside>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="pop hidden" id="pop"></div>
+
+<!-- Modal configurações -->
+<div class="modal hidden" id="settingsModal">
+  <div class="dialog">
+    <h2>Configurações</h2>
+    <p>Por padrão é usado o serviço público e gratuito do LanguageTool (limite de ~20 requisições por minuto). Você pode apontar para um servidor próprio ou usar uma conta Premium.</p>
+    <label for="cfgUrl">Endereço da API</label>
+    <input class="input" type="text" id="cfgUrl" placeholder="https://api.languagetool.org/v2/check">
+    <label for="cfgUser">Usuário Premium (opcional)</label>
+    <input class="input" type="text" id="cfgUser" placeholder="seu@email.com" autocomplete="off">
+    <label for="cfgKey">Chave da API Premium (opcional)</label>
+    <input class="input" type="password" id="cfgKey" placeholder="••••••••" autocomplete="off">
+    <div class="actions">
+      <button class="btn" data-close>Cancelar</button>
+      <button class="btn primary" id="cfgSave">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal dicionário -->
+<div class="modal hidden" id="dictModal">
+  <div class="dialog">
+    <h2>Dicionário pessoal</h2>
+    <p>Palavras que nunca serão marcadas como erro de ortografia (nomes próprios, termos técnicos, siglas). Uma por linha.</p>
+    <textarea class="input" id="dictArea"></textarea>
+    <div class="actions">
+      <button class="btn" data-close>Cancelar</button>
+      <button class="btn primary" id="dictSave">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ========= Configuração ========= */
+const DEFAULT_API = 'https://api.languagetool.org/v2/check';
+const CHUNK_SIZE = 9000;           // caracteres por requisição (limite do plano gratuito = 20 KB por requisição)
+const MAX_BYTES_PER_MIN = 70000;   // plano gratuito: até ~75 KB de texto por minuto
+const MAX_REQ_PER_MIN = 18;        // plano gratuito: até 20 requisições por minuto
+const MAX_ATTEMPTS = 6;            // tentativas por trecho antes de desistir
+const HISTORY_MAX = 30;            // revisões guardadas no histórico
+
+/* Pesos de cada categoria no cálculo da nota (erros graves pesam mais) */
+const WEIGHTS = { ortografia: 1, gramatica: 1, pontuacao: 0.6, tipografia: 0.3, estilo: 0.35, outros: 0.5 };
+
+const CATS = {
+  ortografia: 'Ortografia',
+  gramatica:  'Gramática',
+  pontuacao:  'Pontuação',
+  tipografia: 'Tipografia',
+  estilo:     'Estilo',
+  outros:     'Outros'
+};
+
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+/* ========= Armazenamento local seguro ========= */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('revisor.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('revisor.' + k, JSON.stringify(v)); return true; } catch { return false; } }
+};
+
+/* ========= Estado ========= */
+const state = {
+  view: 'home',
+  sideTab: 'sug',
+  docId: null,
+  text: '',
+  matches: [],
+  filter: 'all',
+  fileName: '',
+  activeId: null,
+  history: [],
+  editing: false,
+  busy: false,
+  found: 0,            // total de erros encontrados na última análise
+  ignored: 0,          // erros ignorados manualmente
+  failedChunks: 0,     // trechos que o serviço não conseguiu analisar
+  firstScore: null,    // nota do texto original (antes das correções)
+  ignoredRules: new Set(),
+  dict: new Set(store.get('dict', []).map(w => w.toLowerCase()))
+};
+let uid = 0;
+
+/* ========= Atalhos DOM ========= */
+const $ = id => document.getElementById(id);
+const el = {
+  app: $('app'), home: $('home'), workspace: $('workspace'), drop: $('drop'), fileInput: $('fileInput'),
+  lang: $('lang'), picky: $('picky'), pasteArea: $('pasteArea'),
+  doc: $('doc'), docEdit: $('docEdit'), list: $('list'), tabs: $('tabs'), pop: $('pop'), ana: $('ana'),
+  loading: $('loading'), loadTitle: $('loadTitle'), loadMsg: $('loadMsg'), loadBar: $('loadBar'),
+  pageTitle: $('pageTitle'), pageCrumb: $('pageCrumb'),
+  btnUndo: $('btnUndo'), btnEdit: $('btnEdit'), editLbl: $('editLbl'), dlMenu: $('dlMenu'), toast: $('toast')
+};
+
+/* ========= Utilidades ========= */
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const WORD_RE = /[\p{L}\p{N}]+(?:[-'’][\p{L}\p{N}]+)*/gu;
+const countWords = t => (t.match(WORD_RE) || []).length;
+const fmtN = n => n.toLocaleString('pt-BR');
+const fmt1 = n => n.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+const fmtScore = v => v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const fmtDate = d => new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+let toastTimer;
+function toast(msg) {
+  el.toast.textContent = msg;
+  el.toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.toast.classList.remove('show'), 2800);
+}
+
+/* ========= Tema ========= */
+const savedTheme = store.get('theme', null);
+if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+function toggleTheme() {
+  const cur = document.documentElement.dataset.theme
+    || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  store.set('theme', next);
+}
+
+/* ========= Navegação ========= */
+function showView(v) {
+  state.view = v;
+  el.home.classList.toggle('hidden', v !== 'home');
+  el.workspace.classList.toggle('hidden', v !== 'review');
+  document.querySelectorAll('.nav [data-nav]').forEach(b => b.classList.toggle('on', b.dataset.nav === v));
+  if (v === 'home') {
+    el.pageTitle.textContent = 'Painel';
+    el.pageCrumb.textContent = 'Visão geral das suas revisões';
+    renderHome();
+  } else {
+    el.pageTitle.textContent = state.fileName || 'Revisão';
+    updateCrumb();
+  }
+  el.app.classList.remove('nav-open');
+  window.scrollTo(0, 0);
+}
+function updateCrumb() {
+  if (state.view !== 'review') return;
+  const words = countWords(state.text);
+  el.pageCrumb.textContent = `Revisão · ${fmtN(words)} palavras · ${el.lang.options[el.lang.selectedIndex].text}`;
+}
+
+/* ========= Extração de texto dos arquivos ========= */
+async function extractText(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'docx') {
+    if (!window.mammoth) throw new Error('Biblioteca de leitura DOCX não carregou. Verifique sua conexão.');
+    const res = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+    return res.value.replace(/\n{3,}/g, '\n\n').trim();
+  }
+  if (ext === 'pdf') {
+    if (!window.pdfjsLib) throw new Error('Biblioteca de leitura PDF não carregou. Verifique sua conexão.');
+    const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+    const pages = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      showLoading('Lendo PDF…', `Página ${i} de ${pdf.numPages}`, i / pdf.numPages);
+      const content = await (await pdf.getPage(i)).getTextContent();
+      let s = '';
+      for (const it of content.items) { s += it.str; if (it.hasEOL) s += '\n'; }
+      pages.push(s.trim());
+    }
+    // junta linhas quebradas no meio de frases
+    return pages.join('\n\n').replace(/([^\n.!?:;])\n(?=[a-zà-ú])/g, '$1 ').replace(/-\n(?=[a-zà-ú])/g, '').trim();
+  }
+  if (ext === 'doc') throw new Error('Arquivos .doc antigos não são suportados. Salve como .docx e tente novamente.');
+  const raw = await file.text();
+  if (ext === 'html' || ext === 'htm') {
+    const d = new DOMParser().parseFromString(raw, 'text/html');
+    d.querySelectorAll('script,style').forEach(n => n.remove());
+    return (d.body.innerText || d.body.textContent || '').trim();
+  }
+  if (ext === 'rtf') return rtfToText(raw);
+  return raw.replace(/\r\n?/g, '\n');
+}
+
+function rtfToText(rtf) {
+  return rtf
+    .replace(/\\'([0-9a-f]{2})/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/\\u(-?\d+)\??/g, (_, n) => String.fromCharCode(n < 0 ? 65536 + +n : +n))
+    .replace(/\\par[d]?\b ?/g, '\n')
+    .replace(/\{\\\*[^{}]*\}/g, '')
+    .replace(/\\[a-z]+-?\d* ?/gi, '')
+    .replace(/[{}]/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/* ========= Divisão em blocos ========= */
+function chunkText(text) {
+  const chunks = [];
+  let start = 0;
+  while (start < text.length) {
+    let end = Math.min(start + CHUNK_SIZE, text.length);
+    if (end < text.length) {
+      const slice = text.slice(start, end);
+      let cut = slice.lastIndexOf('\n');
+      if (cut < CHUNK_SIZE * 0.5) cut = Math.max(slice.lastIndexOf('. '), slice.lastIndexOf('? '), slice.lastIndexOf('! ')) + 1;
+      if (cut < CHUNK_SIZE * 0.3) cut = slice.lastIndexOf(' ');
+      if (cut > 0) end = start + cut + 1;
+    }
+    chunks.push({ start, text: text.slice(start, end) });
+    start = end;
+  }
+  return chunks;
+}
+
+/* ========= Classificação ========= */
+function categorize(m) {
+  const id = ((m.rule && m.rule.category && m.rule.category.id) || '').toUpperCase();
+  const t = (m.rule && m.rule.issueType) || '';
+  if (id === 'TYPOS' || t === 'misspelling') return 'ortografia';
+  if (id === 'PUNCTUATION') return 'pontuacao';
+  if (id === 'TYPOGRAPHY' || t === 'typographical' || t === 'whitespace') return 'tipografia';
+  if (id === 'GRAMMAR' || id === 'CONFUSED_WORDS' || id === 'AGREEMENT' || t === 'grammar') return 'gramatica';
+  if (['STYLE','REDUNDANCY','REPETITIONS','REPETITIONS_STYLE','COLLOQUIALISMS','PLAIN_ENGLISH','SEMANTICS','FORMAL_SPEECH','CLICHES','WIKIPEDIA'].includes(id) || t === 'style' || t === 'register') return 'estilo';
+  return 'outros';
+}
+
+/* ========= Chamada à API ========= */
+/* Controle de limite do serviço gratuito: espera o necessário em vez de falhar */
+const sentLog = [];
+const byteLen = s => new TextEncoder().encode(s).length;
+const usingOwnService = () => { const c = store.get('cfg', {}); return !!(c.url || (c.user && c.key)); };
+async function throttle(bytes) {
+  if (usingOwnService()) return;                       // servidor próprio ou Premium: sem limite local
+  for (;;) {
+    const now = Date.now();
+    while (sentLog.length && now - sentLog[0].t > 60000) sentLog.shift();
+    const used = sentLog.reduce((s, x) => s + x.bytes, 0);
+    if (!sentLog.length || (used + bytes <= MAX_BYTES_PER_MIN && sentLog.length < MAX_REQ_PER_MIN)) break;
+    const wait = Math.ceil((60000 - (now - sentLog[0].t)) / 1000) + 1;
+    el.loadMsg.textContent = `Aguardando o limite do serviço gratuito… ${wait}s`;
+    await sleep(1000);
+  }
+  sentLog.push({ t: Date.now(), bytes });
+}
+
+async function callAPI(text, attempt = 0) {
+  await throttle(byteLen(text));
+  const cfg = store.get('cfg', {});
+  const body = new URLSearchParams({ text, language: el.lang.value, motherTongue: 'pt-BR' });
+  if (el.picky.checked) body.set('level', 'picky');
+  if (cfg.user && cfg.key) { body.set('username', cfg.user); body.set('apiKey', cfg.key); }
+  let res;
+  try {
+    res = await fetch(cfg.url || DEFAULT_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+      body
+    });
+  } catch {
+    if (attempt < MAX_ATTEMPTS - 1) {
+      for (let s = 5; s > 0; s--) { el.loadMsg.textContent = `Falha de conexão. Nova tentativa em ${s}s…`; await sleep(1000); }
+      return callAPI(text, attempt + 1);
+    }
+    throw new Error('Não foi possível conectar ao serviço de revisão. Verifique sua internet.');
+  }
+  if ((res.status === 429 || res.status >= 500) && attempt < MAX_ATTEMPTS - 1) {
+    const wait = res.status === 429 ? 60 : 8;
+    for (let s = wait; s > 0; s--) { el.loadMsg.textContent = `Serviço ocupado (${res.status}). Nova tentativa em ${s}s…`; await sleep(1000); }
+    return callAPI(text, attempt + 1);
+  }
+  if (!res.ok) {
+    const msg = await res.text().catch(() => '');
+    throw new Error(`Erro do serviço (${res.status}). ${msg.slice(0, 160)}`);
+  }
+  return res.json();
+}
+
+async function check() {
+  if (state.busy) return;
+  state.busy = true;
+  state.matches = [];
+  state.activeId = null;
+  state.found = 0;
+  state.ignored = 0;
+  state.failedChunks = 0;
+  render();
+  const chunks = chunkText(state.text);
+  try {
+    for (let i = 0; i < chunks.length; i++) {
+      showLoading('Analisando o texto…', chunks.length > 1 ? `Trecho ${i + 1} de ${chunks.length}` : 'Verificando ortografia e gramática', i / chunks.length);
+      if (!chunks[i].text.trim()) continue;
+      let data;
+      try {
+        data = await callAPI(chunks[i].text);
+      } catch (e) {
+        // não interrompe: segue analisando os demais trechos
+        state.failedChunks++;
+        console.error(e);
+        continue;
+      }
+      for (const m of data.matches || []) {
+        state.matches.push({
+          id: ++uid,
+          offset: m.offset + chunks[i].start,
+          length: m.length,
+          message: m.message,
+          short: m.shortMessage || '',
+          replacements: (m.replacements || []).slice(0, 6).map(r => r.value),
+          ruleId: m.rule ? m.rule.id : '',
+          ruleDesc: m.rule ? m.rule.description : '',
+          cat: categorize(m)
+        });
+      }
+      state.found = state.matches.length;
+      el.loadBar.style.width = ((i + 1) / chunks.length * 100) + '%';
+    }
+    state.found = state.matches.length;
+    const n = activeMatches().length;
+    if (state.failedChunks) {
+      toast(`${state.failedChunks} de ${chunks.length} trechos não puderam ser analisados. Clique em "Verificar novamente".`);
+    } else {
+      if (state.firstScore == null) state.firstScore = computeScore().value;
+      toast(n ? `${n} ${n === 1 ? 'erro encontrado' : 'erros encontrados'} em todo o texto` : 'Nenhum problema encontrado!');
+    }
+  } catch (e) {
+    toast(e.message);
+    console.error(e);
+  } finally {
+    state.busy = false;
+    hideLoading();
+    render();
+  }
+}
+
+/* ========= Filtros ========= */
+function isIgnored(m) {
+  if (state.ignoredRules.has(m.ruleId)) return true;
+  if (m.cat === 'ortografia') {
+    const w = state.text.slice(m.offset, m.offset + m.length).toLowerCase();
+    if (state.dict.has(w)) return true;
+  }
+  return false;
+}
+const activeMatches = () => state.matches.filter(m => !isIgnored(m)).sort((a, b) => a.offset - b.offset);
+const visibleMatches = () => activeMatches().filter(m => state.filter === 'all' || m.cat === state.filter);
+
+/* ========= Contagem e nota ========= */
+function tally() {
+  const pending = activeMatches().length;
+  const ignored = state.ignored + state.matches.filter(isIgnored).length;
+  const found = Math.max(state.found, pending + ignored);
+  const fixed = Math.max(0, found - pending - ignored);
+  return { found, pending, ignored, fixed };
+}
+
+/* Nota de 0 a 10: baseada na quantidade de erros pendentes (ponderados por gravidade)
+   a cada 100 palavras. 0 erros = 10; 1 erro/100 palavras ≈ 9; 2 ≈ 8; 5 ≈ 5,8; 10 ≈ 3,3. */
+function computeScore() {
+  const words = countWords(state.text);
+  if (!words) return { value: null, density: 0 };
+  const weighted = activeMatches().reduce((s, m) => s + (WEIGHTS[m.cat] ?? 0.5), 0);
+  const density = weighted / words * 100;
+  const value = Math.round(10 * Math.exp(-0.11 * density) * 10) / 10;
+  return { value, density };
+}
+function scoreInfo(v) {
+  if (v >= 9) return { lbl: 'Excelente', color: 'var(--ok)', soft: 'var(--ok-soft)' };
+  if (v >= 7) return { lbl: 'Bom', color: 'var(--primary)', soft: 'var(--primary-soft)' };
+  if (v >= 5) return { lbl: 'Regular', color: 'var(--warn)', soft: 'var(--warn-soft)' };
+  if (v >= 3) return { lbl: 'Fraco', color: 'var(--danger)', soft: 'var(--danger-soft)' };
+  return { lbl: 'Insuficiente', color: 'var(--danger)', soft: 'var(--danger-soft)' };
+}
+
+/* ========= Métricas do texto ========= */
+function syllables(w) {
+  const g = w.toLowerCase().match(/[aeiouyáéíóúâêôãõàüï]+/g);
+  return Math.max(1, g ? g.length : 1);
+}
+function textMetrics(t) {
+  const words = t.match(WORD_RE) || [];
+  const sentences = t.split(/(?<=[.!?…])\s+|\n+/).map(s => s.trim()).filter(s => countWords(s) > 0);
+  const paragraphs = t.split(/\n\s*\n|\n/).filter(p => p.trim()).length;
+  const nW = words.length, nS = Math.max(1, sentences.length);
+  const syl = words.reduce((s, w) => s + syllables(w), 0);
+  const asl = nW / nS, asw = nW ? syl / nW : 0;
+  // Índice Flesch (adaptação para o português de Martins et al., 1996)
+  const pt = el.lang.value.startsWith('pt');
+  const flesch = nW ? Math.max(0, Math.min(100, (pt ? 248.835 : 206.835) - 1.015 * asl - 84.6 * asw)) : 0;
+  const longS = sentences.filter(s => countWords(s) > 30).length;
+  const unique = new Set(words.map(w => w.toLowerCase())).size;
+  return { words: nW, sentences: sentences.length, paragraphs, asl, flesch, longS, lexical: nW ? unique / nW : 0, chars: t.length };
+}
+function fleschLabel(f) {
+  if (f >= 75) return 'Muito fácil';
+  if (f >= 50) return 'Fácil';
+  if (f >= 25) return 'Difícil';
+  return 'Muito difícil';
+}
+
+/* ========= Renderização ========= */
+function render() {
+  if (state.view === 'review') {
+    renderDoc();
+    renderKPIs();
+    renderSide();
+    updateCrumb();
+  }
+  el.btnUndo.disabled = !state.history.length;
+  const pend = activeMatches().length;
+  $('navBadge').textContent = pend;
+  $('navBadge').classList.toggle('hidden', !state.docId || !pend);
+  scheduleSave();
+}
+
+function renderDoc() {
+  const t = state.text;
+  const ms = visibleMatches();
+  let html = '', pos = 0;
+  for (const m of ms) {
+    if (m.offset < pos) continue;
+    html += esc(t.slice(pos, m.offset));
+    const frag = t.slice(m.offset, m.offset + m.length);
+    html += `<span class="err c-${m.cat}${m.id === state.activeId ? ' active' : ''}" data-id="${m.id}">${frag.trim() ? esc(frag) : '&nbsp;'.repeat(Math.max(1, frag.length))}</span>`;
+    pos = m.offset + m.length;
+  }
+  html += esc(t.slice(pos));
+  el.doc.innerHTML = html + '\n';
+}
+
+function renderKPIs() {
+  const c = tally();
+  $('cFound').textContent = fmtN(c.found);
+  $('cPending').textContent = fmtN(c.pending);
+  $('cFixed').textContent = fmtN(c.fixed);
+  $('cFixedPct').textContent = (c.found ? Math.round(c.fixed / c.found * 100) : 0) + '% do total';
+  $('cIgnored').textContent = fmtN(c.ignored);
+
+  const sc = computeScore();
+  const ring = $('ring'), delta = $('gradeDelta');
+  if (state.busy || sc.value == null) {
+    $('gradeVal').textContent = '–';
+    ring.style.setProperty('--p', 0);
+    $('gradeLbl').textContent = state.busy ? 'Calculando a nota…' : 'Nota do texto';
+    $('gradeSub').textContent = state.busy ? 'Aguarde o fim da análise' : '';
+    delta.classList.add('hidden');
+    return;
+  }
+  const info = scoreInfo(sc.value);
+  $('gradeVal').textContent = fmtScore(sc.value);
+  ring.style.setProperty('--p', sc.value * 10);
+  ring.style.setProperty('--gc', info.color);
+  $('gradeLbl').innerHTML = `Nota do texto · <span style="color:${info.color}">${info.lbl}</span>`;
+  let sub = `${fmt1(sc.density)} erros a cada 100 palavras`;
+  if (state.failedChunks) sub += ` · análise parcial`;
+  $('gradeSub').textContent = sub;
+  if (state.firstScore != null && sc.value > state.firstScore) {
+    delta.innerHTML = `▲ +${fmtScore(sc.value - state.firstScore)} desde a nota original (${fmtScore(state.firstScore)})`;
+    delta.classList.remove('hidden');
+  } else delta.classList.add('hidden');
+}
+
+function cardHTML(m, compact) {
+  const t = state.text;
+  const a = Math.max(0, m.offset - 45), b = Math.min(t.length, m.offset + m.length + 45);
+  const ctx = (a > 0 ? '…' : '') + esc(t.slice(a, m.offset)) + '<mark>' + esc(t.slice(m.offset, m.offset + m.length)) + '</mark>' + esc(t.slice(m.offset + m.length, b)) + (b < t.length ? '…' : '');
+  const sugs = m.replacements.length
+    ? m.replacements.map((r, i) => `<button class="sug${r.trim() ? '' : ' empty'}" data-act="apply" data-id="${m.id}" data-i="${i}">${r.trim() ? esc(r) : (r === '' ? '(remover)' : '(espaço)')}</button>`).join('')
+    : '<span style="font-size:12.5px;color:var(--muted)">Sem sugestão automática. Edite manualmente.</span>';
+  return `<div class="sg${!compact && m.id === state.activeId ? ' active' : ''}" data-id="${m.id}" style="--cc:var(--c-${m.cat})">
+    <div class="head">${CATS[m.cat]}${m.short ? `<span class="sh">· ${esc(m.short)}</span>` : ''}</div>
+    <div class="msg">${esc(m.message)}</div>
+    <div class="ctx">${ctx.replace(/\n/g, ' ')}</div>
+    <div class="sugs">${sugs}</div>
+    <div class="links">
+      <button class="link" data-act="ignore" data-id="${m.id}">Ignorar</button>
+      <button class="link" data-act="ignoreRule" data-id="${m.id}">Ignorar regra</button>
+      ${m.cat === 'ortografia' ? `<button class="link" data-act="addDict" data-id="${m.id}">Adicionar ao dicionário</button>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderSide() {
+  const all = activeMatches();
+  const counts = {};
+  for (const m of all) counts[m.cat] = (counts[m.cat] || 0) + 1;
+  $('sugCount').textContent = all.length;
+
+  let tabs = `<button class="chip${state.filter === 'all' ? ' on' : ''}" data-f="all">Todas <span class="n">${all.length}</span></button>`;
+  for (const k of Object.keys(CATS)) {
+    if (!counts[k]) continue;
+    tabs += `<button class="chip${state.filter === k ? ' on' : ''}" data-f="${k}"><span class="dot" style="background:var(--c-${k})"></span>${CATS[k]} <span class="n">${counts[k]}</span></button>`;
+  }
+  el.tabs.innerHTML = tabs;
+  if (state.filter !== 'all' && !counts[state.filter]) { state.filter = 'all'; return render(); }
+
+  const vis = visibleMatches();
+  if (!vis.length) {
+    el.list.innerHTML = state.busy ? '' : `<div class="empty"><div class="ic" style="background:var(--ok-soft);color:var(--ok)"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><strong>Tudo certo por aqui</strong>Nenhum problema pendente neste texto.</div>`;
+  } else {
+    el.list.innerHTML = vis.map(m => cardHTML(m)).join('');
+  }
+  $('btnApplyAll').disabled = !vis.some(m => m.replacements.length);
+  $('btnIgnoreAll').disabled = !vis.length;
+
+  if (state.sideTab === 'ana') renderAnalysis();
+}
+
+function renderAnalysis() {
+  const all = activeMatches();
+  const counts = {};
+  for (const m of all) counts[m.cat] = (counts[m.cat] || 0) + 1;
+  const max = Math.max(1, ...Object.values(counts));
+  const bars = Object.keys(CATS).map(k => `
+    <div class="bar-row"><span>${CATS[k]}</span><div class="track"><i style="width:${(counts[k] || 0) / max * 100}%;background:var(--c-${k})"></i></div><b>${counts[k] || 0}</b></div>`).join('');
+
+  const mt = textMetrics(state.text);
+  const byRule = new Map();
+  for (const m of all) {
+    const key = m.ruleId || m.message;
+    const r = byRule.get(key) || { n: 0, desc: m.ruleDesc || m.short || m.message, cat: m.cat };
+    r.n++; byRule.set(key, r);
+  }
+  const top = [...byRule.values()].sort((a, b) => b.n - a.n).slice(0, 6);
+
+  el.ana.innerHTML = `
+    <section>
+      <h3>Erros pendentes por categoria</h3>
+      ${bars}
+    </section>
+    <section>
+      <h3>Legibilidade</h3>
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <b style="font-size:20px">${Math.round(mt.flesch)}<span class="muted" style="font-size:13px;font-weight:500"> / 100</span></b>
+        <span style="font-weight:600">${fleschLabel(mt.flesch)}</span>
+      </div>
+      <div class="read-meter"><i style="left:${mt.flesch}%"></i></div>
+      <div class="read-scale"><span>Muito difícil</span><span>Difícil</span><span>Fácil</span><span>Muito fácil</span></div>
+      <p class="muted" style="font-size:12px;margin:10px 0 0">Índice Flesch${el.lang.value.startsWith('pt') ? ' adaptado ao português' : ''}: considera o tamanho das frases e das palavras.</p>
+    </section>
+    <section>
+      <h3>Métricas do texto</h3>
+      <div class="metrics">
+        <div class="metric"><div class="v">${fmtN(mt.words)}</div><div class="l">Palavras</div></div>
+        <div class="metric"><div class="v">${fmtN(mt.sentences)}</div><div class="l">Frases</div></div>
+        <div class="metric"><div class="v">${fmtN(mt.paragraphs)}</div><div class="l">Parágrafos</div></div>
+        <div class="metric"><div class="v">${fmt1(mt.asl)}</div><div class="l">Palavras por frase</div></div>
+        <div class="metric"><div class="v" style="${mt.longS ? 'color:var(--warn)' : ''}">${fmtN(mt.longS)}</div><div class="l">Frases longas (+30 palavras)</div></div>
+        <div class="metric"><div class="v">${Math.round(mt.lexical * 100)}%</div><div class="l">Variedade de vocabulário</div></div>
+        <div class="metric"><div class="v">${fmtN(mt.chars)}</div><div class="l">Caracteres</div></div>
+        <div class="metric"><div class="v">~${Math.max(1, Math.round(mt.words / 200))} min</div><div class="l">Tempo de leitura</div></div>
+      </div>
+    </section>
+    <section>
+      <h3>Erros mais frequentes</h3>
+      ${top.length ? `<ul class="rules">${top.map(r => `<li><span class="dot" style="background:var(--c-${r.cat})"></span><span title="${esc(r.desc)}">${esc(r.desc)}</span><b>${r.n}×</b></li>`).join('')}</ul>` : '<p class="muted" style="margin:0;font-size:13px">Nenhum erro pendente.</p>'}
+    </section>`;
+}
+
+function setSideTab(t) {
+  state.sideTab = t;
+  document.querySelectorAll('#sideTabs button').forEach(b => b.classList.toggle('on', b.dataset.side === t));
+  $('sidSug').style.display = t === 'sug' ? 'flex' : 'none';
+  $('sidAna').classList.toggle('hidden', t !== 'ana');
+  if (t === 'ana') renderAnalysis();
+}
+
+/* ========= Histórico ========= */
+let saveTimer;
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  if (!state.docId || state.busy || !state.text) return;
+  saveTimer = setTimeout(saveHistory, 600);
+}
+function saveHistory() {
+  if (!state.docId || state.busy) return;
+  const sc = computeScore().value;
+  if (sc == null || state.found === 0 && !state.matches.length && state.firstScore == null) return;
+  const c = tally();
+  const hist = store.get('history', []).filter(h => h.id !== state.docId);
+  hist.unshift({
+    id: state.docId, name: state.fileName, date: Date.now(), lang: el.lang.value,
+    score: sc, firstScore: state.firstScore, words: countWords(state.text),
+    found: c.found, fixed: c.fixed, pending: c.pending, text: state.text
+  });
+  hist.length = Math.min(hist.length, HISTORY_MAX);
+  // se o armazenamento estiver cheio, descarta o texto das revisões mais antigas
+  let keep = hist.length;
+  while (!store.set('history', hist) && keep > 0) {
+    keep--;
+    for (let i = keep; i < hist.length; i++) delete hist[i].text;
+    if (keep === 0) { hist.length = 1; delete hist[0].text; store.set('history', hist); break; }
+  }
+}
+
+function renderHome() {
+  const hist = store.get('history', []);
+  $('hsDocs').textContent = fmtN(hist.length);
+  const scored = hist.filter(h => typeof h.score === 'number');
+  $('hsAvg').textContent = scored.length ? fmtScore(scored.reduce((s, h) => s + h.score, 0) / scored.length) : '–';
+  $('hsFixed').textContent = fmtN(hist.reduce((s, h) => s + (h.fixed || 0), 0));
+  $('hsWords').textContent = fmtN(hist.reduce((s, h) => s + (h.words || 0), 0));
+
+  const ul = $('histList');
+  if (!hist.length) {
+    ul.innerHTML = `<li style="cursor:default;background:none"><div class="empty" style="width:100%"><div class="ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg></div><strong>Nenhuma revisão ainda</strong>Seus textos revisados aparecerão aqui.</div></li>`;
+    return;
+  }
+  ul.innerHTML = hist.map(h => {
+    const info = scoreInfo(h.score);
+    return `<li data-hid="${esc(h.id)}" title="${h.text ? 'Abrir revisão' : 'Texto não disponível (armazenamento cheio)'}">
+      <div class="doc-ic"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div>
+      <div class="info"><div class="nm">${esc(h.name)}</div><div class="mt">${fmtDate(h.date)} · ${fmtN(h.words)} palavras · ${fmtN(h.pending || 0)} pendentes</div></div>
+      <span class="pill" style="background:${info.soft};color:${info.color}">${fmtScore(h.score)}</span>
+      <button class="del" data-del="${esc(h.id)}" title="Remover do histórico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </li>`;
+  }).join('');
+}
+
+function openFromHistory(id) {
+  const h = store.get('history', []).find(x => x.id === id);
+  if (!h) return;
+  if (!h.text) return toast('O texto desta revisão não está mais disponível.');
+  if (h.lang) el.lang.value = h.lang;
+  startDoc(h.name, h.text, h.id);
+  state.firstScore = h.firstScore ?? null;
+  check();
+}
+
+/* ========= Ações ========= */
+function snapshot() {
+  state.history.push({ text: state.text, matches: state.matches.map(m => ({ ...m })), ignored: state.ignored });
+  if (state.history.length > 100) state.history.shift();
+}
+
+function replaceAt(m, rep) {
+  const end = m.offset + m.length;
+  state.text = state.text.slice(0, m.offset) + rep + state.text.slice(end);
+  const delta = rep.length - m.length;
+  state.matches = state.matches.filter(o => {
+    if (o === m) return false;
+    const oEnd = o.offset + o.length;
+    if (o.offset < end && oEnd > m.offset) return false;          // sobreposição: descarta
+    if (o.offset >= end) o.offset += delta;                       // desloca os posteriores
+    return true;
+  });
+}
+
+function applyOne(id, i) {
+  const m = state.matches.find(x => x.id === id);
+  if (!m) return;
+  snapshot();
+  replaceAt(m, m.replacements[i]);
+  hidePop();
+  render();
+}
+
+function applyAll() {
+  const vis = visibleMatches().filter(m => m.replacements.length);
+  if (!vis.length) return;
+  snapshot();
+  let n = 0, lastStart = Infinity;
+  for (const m of vis.sort((a, b) => b.offset - a.offset)) {   // de trás para frente evita deslocamentos
+    if (m.offset + m.length > lastStart) continue;
+    if (!state.matches.includes(m)) continue;
+    replaceAt(m, m.replacements[0]);
+    lastStart = m.offset;
+    n++;
+  }
+  hidePop();
+  render();
+  toast(`${n} ${n === 1 ? 'correção aplicada' : 'correções aplicadas'}`);
+}
+
+function ignore(id) {
+  snapshot();
+  state.matches = state.matches.filter(m => m.id !== id);
+  state.ignored++;
+  hidePop(); render();
+}
+function ignoreAll() {
+  const ids = new Set(visibleMatches().map(m => m.id));
+  snapshot();
+  state.matches = state.matches.filter(m => !ids.has(m.id));
+  state.ignored += ids.size;
+  hidePop(); render();
+  toast(`${ids.size} sugestões ignoradas`);
+}
+function ignoreRule(id) {
+  const m = state.matches.find(x => x.id === id);
+  if (!m) return;
+  state.ignoredRules.add(m.ruleId);
+  hidePop(); render();
+  toast('Regra ignorada neste documento');
+}
+function addDict(id) {
+  const m = state.matches.find(x => x.id === id);
+  if (!m) return;
+  const w = state.text.slice(m.offset, m.offset + m.length);
+  state.dict.add(w.toLowerCase());
+  store.set('dict', [...state.dict]);
+  hidePop(); render();
+  toast(`"${w}" adicionada ao dicionário`);
+}
+function undo() {
+  const s = state.history.pop();
+  if (!s) return;
+  state.text = s.text;
+  state.matches = s.matches;
+  state.ignored = s.ignored || 0;
+  hidePop(); render();
+}
+
+function focusMatch(id, fromDoc) {
+  state.activeId = id;
+  document.querySelectorAll('.err.active,.list .sg.active').forEach(n => n.classList.remove('active'));
+  const span = el.doc.querySelector(`.err[data-id="${id}"]`);
+  const card = el.list.querySelector(`.sg[data-id="${id}"]`);
+  if (span) span.classList.add('active');
+  if (card) card.classList.add('active');
+  if (fromDoc && card && state.sideTab === 'sug') card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  if (!fromDoc && span) span.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+
+/* ========= Popover ========= */
+function showPop(span) {
+  const id = +span.dataset.id;
+  const m = state.matches.find(x => x.id === id);
+  if (!m) return;
+  el.pop.innerHTML = cardHTML(m, true);
+  el.pop.classList.remove('hidden');
+  const r = span.getBoundingClientRect();
+  const pw = el.pop.offsetWidth, ph = el.pop.offsetHeight;
+  const left = Math.min(Math.max(12, r.left), innerWidth - pw - 12);
+  let top = r.bottom + 8;
+  if (top + ph > innerHeight - 12) top = Math.max(12, r.top - ph - 8);
+  el.pop.style.left = left + 'px';
+  el.pop.style.top = top + 'px';
+}
+function hidePop() { el.pop.classList.add('hidden'); }
+
+/* ========= Carregamento ========= */
+function showLoading(title, msg, frac) {
+  el.loading.classList.remove('hidden');
+  el.loadTitle.textContent = title;
+  el.loadMsg.textContent = msg || '';
+  el.loadBar.style.width = Math.round((frac || 0) * 100) + '%';
+}
+function hideLoading() { el.loading.classList.add('hidden'); }
+
+function startDoc(name, text, id) {
+  if (state.editing) toggleEdit(true);
+  state.docId = id || Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  state.fileName = name;
+  state.text = text;
+  state.matches = []; state.history = []; state.ignoredRules.clear();
+  state.firstScore = null; state.found = 0; state.ignored = 0; state.failedChunks = 0;
+  state.filter = 'all';
+  $('navReview').disabled = false;
+  showView('review');
+  render();
+}
+
+async function handleFile(file) {
+  if (!file) return;
+  if (file.size > 15 * 1024 * 1024) return toast('Arquivo muito grande (máximo 15 MB).');
+  startDoc(file.name, '');
+  showLoading('Lendo arquivo…', file.name, 0);
+  try {
+    const text = await extractText(file);
+    if (!text.trim()) throw new Error('Não foi encontrado texto no arquivo. PDFs escaneados (imagem) não são suportados.');
+    state.text = text;
+    render();
+    await check();
+  } catch (e) {
+    hideLoading();
+    toast(e.message);
+    console.error(e);
+    state.docId = null;
+    $('navReview').disabled = true;
+    showView('home');
+  } finally {
+    el.fileInput.value = '';
+  }
+}
+
+/* ========= Edição manual ========= */
+function toggleEdit(discard) {
+  if (!state.editing) {
+    state.editing = true;
+    el.docEdit.value = state.text;
+    el.doc.classList.add('hidden');
+    el.docEdit.classList.remove('hidden');
+    el.docEdit.focus();
+    el.editLbl.textContent = 'Concluir edição';
+    hidePop();
+  } else {
+    state.editing = false;
+    el.doc.classList.remove('hidden');
+    el.docEdit.classList.add('hidden');
+    el.editLbl.textContent = 'Editar texto';
+    if (discard !== true && el.docEdit.value !== state.text) {
+      snapshot();
+      state.text = el.docEdit.value;
+      check();
+    }
+  }
+}
+
+/* ========= Exportação ========= */
+function safeName() { return state.fileName.replace(/\.[^.]{1,5}$/, '').replace(/[\\/:*?"<>|…]+/g, '').trim() || 'texto'; }
+function baseName() { return safeName() + '-revisado'; }
+function download(content, name, type) {
+  const blob = new Blob([content], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function toHTMLDoc(forWord) {
+  const paras = state.text.split(/\n/).map(p => p.trim() ? `<p>${esc(p)}</p>` : '<p>&nbsp;</p>').join('\n');
+  const ns = forWord ? ' xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"' : '';
+  return `<!DOCTYPE html><html lang="pt-BR"${ns}><head><meta charset="utf-8"><title>${esc(baseName())}</title>
+<style>body{font-family:Calibri,Arial,sans-serif;font-size:12pt;line-height:1.5;max-width:780px;margin:40px auto;padding:0 20px}p{margin:0 0 8pt}</style></head><body>${paras}</body></html>`;
+}
+
+const RPT_COLORS = { ortografia: '#d92d20', gramatica: '#4f46e5', pontuacao: '#c4620a', tipografia: '#7a5af8', estilo: '#0e8a7d', outros: '#667085' };
+function toReport() {
+  const sc = computeScore(), c = tally(), mt = textMetrics(state.text), all = activeMatches();
+  const info = sc.value == null ? { lbl: '–' } : scoreInfo(sc.value);
+  const colorOf = v => v >= 9 ? '#0f8a5f' : v >= 7 ? '#4f46e5' : v >= 5 ? '#b54708' : '#d1342b';
+  const counts = {};
+  for (const m of all) counts[m.cat] = (counts[m.cat] || 0) + 1;
+  const t = state.text;
+  const rows = all.map((m, i) => {
+    const a = Math.max(0, m.offset - 40), b = Math.min(t.length, m.offset + m.length + 40);
+    const ctx = (a > 0 ? '…' : '') + esc(t.slice(a, m.offset)) + '<b style="color:#d1342b;text-decoration:line-through">' + esc(t.slice(m.offset, m.offset + m.length)) + '</b>' + esc(t.slice(m.offset + m.length, b)) + (b < t.length ? '…' : '');
+    return `<tr><td>${i + 1}</td><td><span class="tag" style="background:${RPT_COLORS[m.cat]}">${CATS[m.cat]}</span></td><td>${esc(m.message)}<div class="ctx">${ctx.replace(/\n/g, ' ')}</div></td><td>${m.replacements.slice(0, 3).map(r => `<span class="s">${esc(r) || '(remover)'}</span>`).join(' ') || '—'}</td></tr>`;
+  }).join('');
+  const v = sc.value ?? 0;
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Relatório de revisão · ${esc(state.fileName)}</title>
+<style>
+body{font-family:Inter,Segoe UI,Arial,sans-serif;color:#121722;background:#f4f5f8;margin:0;padding:32px 16px;font-size:14px;line-height:1.5}
+.wrap{max-width:900px;margin:0 auto}
+.card{background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:22px 24px;margin-bottom:16px}
+h1{font-size:22px;margin:0 0 2px}h2{font-size:15px;margin:0 0 14px}
+.muted{color:#667085}
+.top{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.ring{width:96px;height:96px;border-radius:50%;background:conic-gradient(${colorOf(v)} ${v * 10}%,#e9ebf0 0);display:grid;place-items:center}
+.ring div{width:78px;height:78px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:24px;font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.k{background:#f3f4f7;border-radius:10px;padding:10px 12px}.k b{display:block;font-size:20px}.k span{font-size:12px;color:#667085}
+table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:10px 8px;border-bottom:1px solid #eef0f3;vertical-align:top}th{font-size:12px;color:#667085;text-transform:uppercase;letter-spacing:.05em}
+.tag{color:#fff;font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;white-space:nowrap}
+.ctx{color:#667085;font-size:13px;margin-top:4px;font-family:Georgia,serif}
+.s{display:inline-block;background:#e3f6ed;color:#0f8a5f;font-weight:600;padding:1px 7px;border-radius:6px;margin:0 2px 2px 0}
+.text{white-space:pre-wrap;font-family:Georgia,serif;font-size:15px;line-height:1.7}
+@media(max-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media print{body{background:#fff;padding:0}.card{border:0;padding:12px 0}}
+</style></head><body><div class="wrap">
+<div class="card"><div class="top"><div class="ring"><div>${sc.value == null ? '–' : fmtScore(v)}</div></div>
+<div><div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em">Relatório de revisão</div><h1>${esc(state.fileName)}</h1>
+<div>Nota <b>${sc.value == null ? '–' : fmtScore(v)}</b> de 10 · <b style="color:${colorOf(v)}">${info.lbl}</b></div>
+<div class="muted" style="font-size:13px">${fmtDate(Date.now())} · ${esc(el.lang.options[el.lang.selectedIndex].text)}${state.firstScore != null && state.firstScore !== sc.value ? ` · nota original ${fmtScore(state.firstScore)}` : ''}</div></div></div></div>
+<div class="card"><h2>Resumo</h2><div class="grid">
+<div class="k"><b>${fmtN(c.found)}</b><span>Erros encontrados</span></div><div class="k"><b>${fmtN(c.fixed)}</b><span>Corrigidos</span></div>
+<div class="k"><b>${fmtN(c.pending)}</b><span>Pendentes</span></div><div class="k"><b>${fmtN(c.ignored)}</b><span>Ignorados</span></div>
+<div class="k"><b>${fmtN(mt.words)}</b><span>Palavras</span></div><div class="k"><b>${fmtN(mt.sentences)}</b><span>Frases</span></div>
+<div class="k"><b>${fmt1(mt.asl)}</b><span>Palavras por frase</span></div><div class="k"><b>${Math.round(mt.flesch)}</b><span>Legibilidade (${fleschLabel(mt.flesch)})</span></div>
+</div>
+<p class="muted" style="margin:14px 0 0;font-size:13px">Pendentes por categoria: ${Object.keys(CATS).filter(k => counts[k]).map(k => `${CATS[k]} ${counts[k]}`).join(' · ') || 'nenhum'}</p></div>
+<div class="card"><h2>Erros pendentes (${all.length})</h2>${all.length ? `<table><thead><tr><th>#</th><th>Tipo</th><th>Problema</th><th>Sugestão</th></tr></thead><tbody>${rows}</tbody></table>` : '<p class="muted">Nenhum erro pendente.</p>'}</div>
+<div class="card"><h2>Texto revisado</h2><div class="text">${esc(state.text)}</div></div>
+<p class="muted" style="text-align:center;font-size:12px">Gerado pelo Revisor · análise com LanguageTool</p>
+</div></body></html>`;
+}
+
+function exportAs(kind) {
+  el.dlMenu.classList.add('hidden');
+  if (state.editing) toggleEdit();
+  if (kind === 'txt') download('﻿' + state.text.replace(/\n/g, '\r\n'), baseName() + '.txt', 'text/plain;charset=utf-8');
+  if (kind === 'html') download(toHTMLDoc(false), baseName() + '.html', 'text/html;charset=utf-8');
+  if (kind === 'docx') download('﻿' + toHTMLDoc(true), baseName() + '.doc', 'application/msword');
+  if (kind === 'report') download(toReport(), safeName() + '-relatorio.html', 'text/html;charset=utf-8');
+  toast('Download iniciado');
+}
+
+/* ========= Eventos ========= */
+el.fileInput.addEventListener('change', e => handleFile(e.target.files[0]));
+['dragenter', 'dragover'].forEach(ev => el.drop.addEventListener(ev, e => { e.preventDefault(); el.drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => el.drop.addEventListener(ev, e => { e.preventDefault(); el.drop.classList.remove('over'); }));
+el.drop.addEventListener('drop', e => handleFile(e.dataTransfer.files[0]));
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => e.preventDefault());
+
+$('btnPaste').onclick = () => {
+  const t = el.pasteArea.value.trim();
+  if (!t) { el.pasteArea.focus(); return toast('Cole algum texto primeiro.'); }
+  const first = t.split('\n').find(l => l.trim()).trim();   // usa a primeira linha como título
+  startDoc(first.length > 50 ? first.slice(0, 50).trim() + '…' : first, t);
+  el.pasteArea.value = '';
+  check();
+};
+
+/* Navegação lateral */
+document.querySelectorAll('.nav [data-nav]').forEach(b => b.addEventListener('click', () => {
+  const n = b.dataset.nav;
+  if (n === 'home' || n === 'review') return showView(n);
+  el.app.classList.remove('nav-open');
+  if (n === 'history') { showView('home'); $('historyCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  if (n === 'dict') openDict();
+  if (n === 'settings') openSettings();
+  if (n === 'theme') toggleTheme();
+}));
+$('menuBtn').onclick = () => el.app.classList.add('nav-open');
+$('scrim').onclick = () => el.app.classList.remove('nav-open');
+$('topNew').onclick = () => {
+  if (state.editing) toggleEdit();
+  showView('home');
+  el.pasteArea.focus({ preventScroll: true });
+};
+
+/* Histórico */
+$('histList').addEventListener('click', e => {
+  const del = e.target.closest('[data-del]');
+  if (del) {
+    e.stopPropagation();
+    if (!confirm('Remover esta revisão do histórico?')) return;
+    store.set('history', store.get('history', []).filter(h => h.id !== del.dataset.del));
+    if (state.docId === del.dataset.del) state.docId = null;
+    renderHome();
+    return;
+  }
+  const li = e.target.closest('[data-hid]');
+  if (li) openFromHistory(li.dataset.hid);
+});
+
+/* Documento e sugestões */
+el.doc.addEventListener('click', e => {
+  const span = e.target.closest('.err');
+  if (!span) return;
+  e.stopPropagation();
+  focusMatch(+span.dataset.id, true);
+  showPop(span);
+});
+
+function handleAction(e) {
+  const b = e.target.closest('[data-act]');
+  if (!b) return false;
+  e.stopPropagation();
+  const id = +b.dataset.id;
+  ({ apply: () => applyOne(id, +b.dataset.i), ignore: () => ignore(id), ignoreRule: () => ignoreRule(id), addDict: () => addDict(id) })[b.dataset.act]();
+  return true;
+}
+el.list.addEventListener('click', e => {
+  if (handleAction(e)) return;
+  const c = e.target.closest('.sg');
+  if (c) focusMatch(+c.dataset.id, false);
+});
+el.pop.addEventListener('click', e => { handleAction(e); e.stopPropagation(); });
+el.tabs.addEventListener('click', e => {
+  const t = e.target.closest('.chip');
+  if (!t) return;
+  state.filter = t.dataset.f; hidePop(); render();
+});
+$('sideTabs').addEventListener('click', e => {
+  const b = e.target.closest('[data-side]');
+  if (b) setSideTab(b.dataset.side);
+});
+
+document.addEventListener('click', e => {
+  hidePop();
+  if (!e.target.closest('#btnDownload')) el.dlMenu.classList.add('hidden');
+});
+el.doc.addEventListener('scroll', hidePop);
+window.addEventListener('resize', hidePop);
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { hidePop(); el.dlMenu.classList.add('hidden'); el.app.classList.remove('nav-open'); document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden')); }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !state.editing && state.view === 'review' && document.activeElement.tagName !== 'TEXTAREA' && document.activeElement.tagName !== 'INPUT') {
+    e.preventDefault(); undo();
+  }
+});
+
+$('btnApplyAll').onclick = applyAll;
+$('btnIgnoreAll').onclick = ignoreAll;
+el.btnUndo.onclick = undo;
+el.btnEdit.onclick = () => toggleEdit();
+$('btnRecheck').onclick = () => { if (state.editing) toggleEdit(); else check(); };
+$('btnCopy').onclick = async () => {
+  const t = state.editing ? el.docEdit.value : state.text;
+  try { await navigator.clipboard.writeText(t); toast('Texto copiado'); }
+  catch { toast('Não foi possível copiar automaticamente'); }
+};
+$('btnDownload').onclick = e => { e.stopPropagation(); el.dlMenu.classList.toggle('hidden'); };
+el.dlMenu.addEventListener('click', e => { const b = e.target.closest('[data-dl]'); if (b) exportAs(b.dataset.dl); });
+
+/* Modais */
+document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => {
+  if (e.target === m || e.target.closest('[data-close]')) m.classList.add('hidden');
+}));
+function updateService() {
+  const own = usingOwnService(), c = store.get('cfg', {});
+  $('svcName').textContent = own ? (c.user && c.key ? 'LanguageTool · Premium' : 'LanguageTool · servidor próprio') : 'LanguageTool · serviço público';
+}
+function openSettings() {
+  const c = store.get('cfg', {});
+  $('cfgUrl').value = c.url || ''; $('cfgUser').value = c.user || ''; $('cfgKey').value = c.key || '';
+  $('settingsModal').classList.remove('hidden');
+}
+$('cfgSave').onclick = () => {
+  store.set('cfg', { url: $('cfgUrl').value.trim(), user: $('cfgUser').value.trim(), key: $('cfgKey').value.trim() });
+  $('settingsModal').classList.add('hidden');
+  updateService();
+  toast('Configurações salvas');
+};
+function openDict() {
+  $('dictArea').value = [...state.dict].sort().join('\n');
+  $('dictModal').classList.remove('hidden');
+}
+$('dictSave').onclick = () => {
+  state.dict = new Set($('dictArea').value.split(/\n/).map(w => w.trim().toLowerCase()).filter(Boolean));
+  store.set('dict', [...state.dict]);
+  $('dictModal').classList.add('hidden');
+  render();
+  toast('Dicionário atualizado');
+};
+
+/* Preferências */
+el.lang.value = store.get('lang', 'pt-BR');
+el.picky.checked = store.get('picky', true);   // revisão rigorosa ligada por padrão: detecta mais tipos de erro
+el.lang.onchange = () => store.set('lang', el.lang.value);
+el.picky.onchange = () => store.set('picky', el.picky.checked);
+
+updateService();
+showView('home');
+})();
+</script>
+</body>
+</html>
