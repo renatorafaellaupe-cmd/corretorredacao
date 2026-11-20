@@ -1,0 +1,3012 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1220">
+<title>Revisor · Correção de Redações</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<style>
+/* ================= Tokens ================= */
+:root{
+  --bg:#f4f5f8; --surface:#ffffff; --surface-2:#f3f4f7; --surface-3:#e9ebf0;
+  --border:#e4e7ec; --border-strong:#d0d5dd;
+  --text:#121722; --text-2:#344054; --muted:#667085;
+  --primary:#4f46e5; --primary-ink:#ffffff; --primary-soft:#eef0ff;
+  --ok:#0f8a5f; --ok-soft:#e3f6ed; --warn:#b54708; --warn-soft:#fef3e2; --danger:#d1342b; --danger-soft:#fdecea;
+  --ai:#7a5af8; --ai-soft:#f1edff;
+  --c-ortografia:#d92d20; --c-gramatica:#4f46e5; --c-pontuacao:#c4620a; --c-tipografia:#7a5af8; --c-estilo:#0e8a7d; --c-outros:#667085;
+  --sb-bg:#0e1220; --sb-text:#c7cdda; --sb-muted:#7c859a; --sb-hover:#181d2e; --sb-active:#222944; --sb-border:#1d2335;
+  --shadow-sm:0 1px 2px rgba(16,24,40,.05);
+  --shadow:0 1px 2px rgba(16,24,40,.05),0 6px 20px rgba(16,24,40,.06);
+  --radius:14px;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0c0f15; --surface:#141821; --surface-2:#1a1f2a; --surface-3:#232936;
+    --border:#252b38; --border-strong:#333b4b;
+    --text:#e8eaf0; --text-2:#c3c8d4; --muted:#8d96a8;
+    --primary:#8188ff; --primary-ink:#0c0f15; --primary-soft:#1e2147;
+    --ok:#3ccb95; --ok-soft:#13302a; --warn:#f5a524; --warn-soft:#33270f; --danger:#ff6b61; --danger-soft:#3a1a1a;
+    --ai:#a993ff; --ai-soft:#251f45;
+    --c-ortografia:#ff6b61; --c-gramatica:#8188ff; --c-pontuacao:#f5a524; --c-tipografia:#a993ff; --c-estilo:#2dd4bf; --c-outros:#98a2b3;
+    --sb-bg:#080a10; --sb-hover:#11151f; --sb-active:#1a1f30; --sb-border:#161b27;
+    --shadow-sm:0 1px 2px rgba(0,0,0,.3); --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0c0f15; --surface:#141821; --surface-2:#1a1f2a; --surface-3:#232936;
+  --border:#252b38; --border-strong:#333b4b;
+  --text:#e8eaf0; --text-2:#c3c8d4; --muted:#8d96a8;
+  --primary:#8188ff; --primary-ink:#0c0f15; --primary-soft:#1e2147;
+  --ok:#3ccb95; --ok-soft:#13302a; --warn:#f5a524; --warn-soft:#33270f; --danger:#ff6b61; --danger-soft:#3a1a1a;
+  --ai:#a993ff; --ai-soft:#251f45;
+  --c-ortografia:#ff6b61; --c-gramatica:#8188ff; --c-pontuacao:#f5a524; --c-tipografia:#a993ff; --c-estilo:#2dd4bf; --c-outros:#98a2b3;
+  --sb-bg:#080a10; --sb-hover:#11151f; --sb-active:#1a1f30; --sb-border:#161b27;
+  --shadow-sm:0 1px 2px rgba(0,0,0,.3); --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25);
+}
+
+/* ================= Base ================= */
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--text);font:14.5px/1.5 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent}
+button,select,input,textarea{font:inherit;color:inherit}
+svg{flex:none}
+.hidden{display:none!important}
+.muted{color:var(--muted)}
+
+/* ================= Estrutura ================= */
+.app{display:grid;grid-template-columns:252px minmax(0,1fr);min-height:100vh}
+
+.sidebar{position:sticky;top:0;height:100vh;background:var(--sb-bg);color:var(--sb-text);display:flex;flex-direction:column;padding:18px 14px;z-index:40}
+.brand{display:flex;align-items:center;gap:11px;padding:4px 8px 20px}
+.brand .logo{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#4338ca);color:#fff;display:grid;place-items:center;box-shadow:0 4px 12px rgba(79,70,229,.35)}
+.brand b{display:block;color:#fff;font-size:16px;letter-spacing:-.01em}
+.brand small{display:block;color:var(--sb-muted);font-size:12px}
+.nav-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--sb-muted);padding:14px 10px 6px}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav button{display:flex;align-items:center;gap:11px;width:100%;border:0;background:transparent;color:var(--sb-text);padding:9px 10px;border-radius:9px;cursor:pointer;font-weight:500;text-align:left;transition:background .15s,color .15s}
+.nav button svg{width:18px;height:18px;opacity:.85}
+.nav button:hover{background:var(--sb-hover);color:#fff}
+.nav button.on{background:var(--sb-active);color:#fff}
+.nav button.on svg{opacity:1;color:#a5a8ff}
+.nav button:disabled{opacity:.4;cursor:not-allowed;background:transparent}
+.nav .badge{margin-left:auto;font-size:11.5px;background:#2b3252;color:#d4d7ff;padding:1px 8px;border-radius:99px}
+.sb-foot{margin-top:auto;border-top:1px solid var(--sb-border);padding-top:10px}
+.svc{display:flex;align-items:center;gap:9px;padding:6px 10px;font-size:12.5px;color:var(--sb-muted)}
+.svc i{width:8px;height:8px;border-radius:50%;background:#3ccb95;box-shadow:0 0 0 3px rgba(60,203,149,.15)}
+.svc i.off{background:#4b5468;box-shadow:none}
+.svc i.ai{background:#a993ff;box-shadow:0 0 0 3px rgba(169,147,255,.18)}
+.scrim{display:none}
+
+.main{min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:30;height:64px;display:flex;align-items:center;gap:12px;padding:0 28px;background:color-mix(in srgb,var(--surface) 90%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
+.topbar h1{font-size:17px;margin:0;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .crumb{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .titles{min-width:0}
+.spacer{flex:1}
+.btn.menu-btn{display:none}
+.page{width:100%;max-width:1480px;margin:0 auto;padding:24px 28px 48px}
+
+/* ================= Botões ================= */
+.btn{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--border);background:var(--surface);padding:8px 13px;border-radius:9px;cursor:pointer;font-weight:500;font-size:13.5px;white-space:nowrap;box-shadow:var(--shadow-sm);transition:background .15s,border-color .15s,filter .15s}
+.btn:hover{background:var(--surface-2);border-color:var(--border-strong)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{background:var(--primary);border-color:var(--primary);color:var(--primary-ink)}
+.btn.primary:hover{filter:brightness(1.08);background:var(--primary)}
+.btn.ai{background:var(--ai);border-color:var(--ai);color:#fff}
+.btn.ai:hover{filter:brightness(1.08);background:var(--ai)}
+.btn.ghost{border-color:transparent;background:transparent;box-shadow:none}
+.btn.ghost:hover{background:var(--surface-2)}
+.btn.icon{padding:8px}
+.btn.lg{padding:11px 18px;font-size:14.5px;border-radius:10px}
+.btn svg{width:17px;height:17px}
+
+/* ================= Cartões ================= */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card-h{display:flex;align-items:center;gap:10px;padding:16px 20px;border-bottom:1px solid var(--border)}
+.card-h h2{font-size:15px;margin:0;letter-spacing:-.01em}
+.card-h p{margin:0;font-size:12.5px;color:var(--muted)}
+.card-b{padding:20px}
+
+/* ================= Início ================= */
+.welcome{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:20px}
+.welcome h2{font-size:24px;margin:0 0 4px;letter-spacing:-.02em}
+.welcome p{margin:0;color:var(--muted);max-width:720px}
+.stats4{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:20px}
+.stat{padding:16px 18px;display:flex;gap:14px;align-items:center}
+.stat .ic{width:42px;height:42px;border-radius:11px;display:grid;place-items:center;flex:none}
+.stat .ic svg{width:20px;height:20px}
+.stat .v{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.stat .l{font-size:12.5px;color:var(--muted)}
+.home-grid{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:20px;align-items:start}
+
+.step-h{display:flex;align-items:center;gap:9px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:0 0 10px}
+.step-h .num{width:21px;height:21px;border-radius:50%;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;font-size:11.5px;letter-spacing:0}
+.modes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.mode{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;border:1.5px solid var(--border);background:var(--surface);border-radius:12px;padding:12px 12px 13px;cursor:pointer;transition:border-color .15s,background .15s,box-shadow .15s}
+.mode:hover{border-color:var(--border-strong);box-shadow:var(--shadow-sm)}
+.mode .mi{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;background:var(--surface-2);color:var(--text-2);transition:background .15s,color .15s}
+.mode .mi svg{width:17px;height:17px}
+.mode b{font-size:13.5px;letter-spacing:-.01em}
+.mode small{font-size:11.5px;color:var(--muted);line-height:1.35}
+.mode.on{border-color:var(--primary);background:var(--primary-soft)}
+.mode.on .mi{background:var(--primary);color:#fff}
+.mode.on::after{content:'';position:absolute;top:10px;right:10px;width:17px;height:17px;border-radius:50%;background:var(--primary) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M20 6 9 17l-5-5'/%3E%3C/svg%3E") center/10px no-repeat}
+.fgrid{display:grid;grid-template-columns:200px minmax(0,1fr);gap:12px;margin-top:14px}
+.fgrid.one{grid-template-columns:minmax(0,1fr)}
+.fl label{display:block;font-size:12.5px;font-weight:600;color:var(--text-2);margin-bottom:5px}
+.fl label span{font-weight:400;color:var(--muted)}
+.input{width:100%;border:1px solid var(--border);background:var(--surface-2);border-radius:9px;padding:9px 11px;outline:none;transition:border-color .15s,box-shadow .15s}
+select.input{cursor:pointer}
+.input:focus,.paste:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+
+.seg{display:inline-flex;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:3px;gap:2px}
+.seg button{border:0;background:transparent;padding:6px 12px;border-radius:7px;cursor:pointer;font-weight:500;font-size:13px;color:var(--muted);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.seg button svg{width:16px;height:16px}
+.seg button.on{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm)}
+.seg .n{font-size:11.5px;background:var(--surface-3);padding:0 6px;border-radius:99px;color:var(--text-2)}
+.seg button.on .n{background:var(--primary-soft);color:var(--primary)}
+.seg.full{display:flex;width:100%;margin-bottom:14px}
+.seg.full button{flex:1;justify-content:center;padding:9px 10px}
+
+.cam{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.cam-btn{display:flex;align-items:center;gap:13px;padding:16px;border-radius:12px;border:1.5px dashed var(--border-strong);background:var(--surface-2);cursor:pointer;text-align:left;transition:border-color .15s,background .15s}
+.cam-btn:hover,.cam-btn.over{border-color:var(--primary);background:var(--primary-soft)}
+.cam-btn .ci{width:44px;height:44px;border-radius:12px;background:var(--primary);color:#fff;display:grid;place-items:center;flex:none;box-shadow:0 4px 12px rgba(79,70,229,.3)}
+.cam-btn.alt .ci{background:var(--surface);color:var(--primary);box-shadow:var(--shadow-sm)}
+.cam-btn .ci svg{width:22px;height:22px}
+.cam-btn b{display:block;font-size:14.5px}
+.cam-btn small{display:block;color:var(--muted);font-size:12.5px;line-height:1.35}
+.thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:10px;margin-top:14px}
+.thumbs:empty{display:none}
+.thumb{position:relative;border-radius:10px;overflow:hidden;border:1px solid var(--border);background:var(--surface-3);aspect-ratio:3/4}
+.thumb img{width:100%;height:100%;object-fit:contain;transition:transform .2s;background:#000}
+.thumb .pg{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.65);color:#fff;font-size:11px;font-weight:600;padding:1px 8px;border-radius:99px}
+.thumb .ta{position:absolute;left:0;right:0;bottom:0;display:flex;justify-content:center;gap:4px;padding:18px 6px 6px;background:linear-gradient(transparent,rgba(0,0,0,.7))}
+.thumb .ta button{width:28px;height:28px;border-radius:7px;border:0;background:rgba(255,255,255,.94);color:#121722;display:grid;place-items:center;cursor:pointer;padding:0}
+.thumb .ta button:hover{background:#fff}
+.thumb .ta button.del{color:#d1342b}
+.thumb .ta svg{width:15px;height:15px}
+.tips{margin:12px 0 0;padding:10px 12px 10px 30px;border-radius:10px;background:var(--surface-2);font-size:12.5px;color:var(--muted);line-height:1.6}
+.tips b{color:var(--text-2)}
+.ocr-opts{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:14px}
+.engine{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.eng{display:flex;gap:11px;align-items:flex-start;text-align:left;padding:12px 13px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;transition:border-color .15s,background .15s}
+.eng:hover{border-color:var(--border-strong)}
+.eng .ei{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;flex:none;background:var(--surface-2);color:var(--text-2)}
+.eng .ei svg{width:18px;height:18px}
+.eng b{display:flex;align-items:center;gap:6px;font-size:13.5px}
+.eng small{display:block;font-size:12px;color:var(--muted);line-height:1.4;margin-top:2px}
+.eng .st{font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:99px;background:var(--surface-3);color:var(--muted)}
+.eng .st.ok{background:var(--ok-soft);color:var(--ok)}
+.eng.on{border-color:var(--primary);background:var(--primary-soft)}
+.eng.on .ei{background:var(--primary);color:#fff}
+.eng.ai.on{border-color:var(--ai);background:var(--ai-soft)}
+.eng.ai.on .ei{background:var(--ai);color:#fff}
+.test-row{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+.test-st{font-size:12.5px;color:var(--muted)}
+.test-st.ok{color:var(--ok)}.test-st.err{color:var(--danger)}
+.key-wrap{display:flex;gap:8px}
+.key-wrap .input{flex:1}
+.dialog a{color:var(--primary)}
+.ocr-run{display:flex;gap:12px;align-items:center;margin-top:14px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:var(--surface-2)}
+.ocr-run>div:last-child{flex:1;min-width:0}
+.ocr-run #ocrMsg{font-size:12.5px;color:var(--muted)}
+.banner{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;background:var(--ok-soft);color:var(--ok);font-size:13px;margin-bottom:12px}
+.banner svg{width:17px;height:17px;margin-top:1px}
+.banner.warn{background:var(--warn-soft);color:var(--warn)}
+.banner b{display:block}
+.banner .link{color:inherit;text-decoration:underline;margin-left:auto;font-weight:600;white-space:nowrap}
+
+.drop{display:block;border:2px dashed var(--border-strong);border-radius:12px;padding:30px 20px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;background:var(--surface-2)}
+.drop:hover,.drop.over{border-color:var(--primary);background:var(--primary-soft)}
+.drop .ic{width:50px;height:50px;margin:0 auto 12px;border-radius:13px;background:var(--surface);color:var(--primary);display:grid;place-items:center;box-shadow:var(--shadow-sm)}
+.drop .ic svg{width:24px;height:24px}
+.drop strong{font-size:15.5px}
+.drop .fmt{margin-top:6px;color:var(--muted);font-size:12.5px}
+.fmts{display:flex;gap:6px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+.fmts span{font-size:11px;font-weight:600;letter-spacing:.04em;padding:3px 8px;border-radius:6px;background:var(--surface);border:1px solid var(--border);color:var(--text-2)}
+.paste{width:100%;min-height:200px;resize:vertical;border:1px solid var(--border);background:var(--surface);border-radius:10px;padding:12px 14px;outline:none;line-height:1.6;font-family:"Source Serif 4",Georgia,serif;font-size:15.5px}
+.paste-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-top:6px}
+.opts{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:16px;padding-top:16px;border-top:1px solid var(--border)}
+.field{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);padding:7px 11px;border-radius:9px;font-size:13.5px;max-width:100%}
+.field select{border:0;background:transparent;outline:none;cursor:pointer;color:var(--text);min-width:0;max-width:100%}
+.field select option{background:var(--surface)}
+.switch{display:flex;align-items:center;gap:9px;font-size:13.5px;cursor:pointer;user-select:none}
+.switch input{appearance:none;-webkit-appearance:none;width:34px;height:20px;border-radius:99px;background:var(--surface-3);position:relative;cursor:pointer;transition:background .15s;margin:0;flex:none}
+.switch input::after{content:'';position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.switch input:checked{background:var(--primary)}
+.switch input:checked::after{transform:translateX(14px)}
+.note{display:flex;gap:8px;align-items:flex-start;margin-top:16px;font-size:12.5px;color:var(--muted)}
+.note svg{width:15px;height:15px;margin-top:2px}
+
+.hist{list-style:none;margin:0;padding:6px}
+.hist li{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;cursor:pointer;transition:background .15s}
+.hist li:hover{background:var(--surface-2)}
+.hist .doc-ic{width:36px;height:36px;border-radius:9px;background:var(--surface-2);color:var(--muted);display:grid;place-items:center;flex:none;font-size:10.5px;font-weight:700;letter-spacing:.02em}
+.hist li:hover .doc-ic{background:var(--surface)}
+.hist .info{min-width:0;flex:1}
+.hist .nm{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hist .mt{font-size:12px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill{font-size:12.5px;font-weight:700;padding:3px 9px;border-radius:99px;white-space:nowrap}
+.hist .del{opacity:0;border:0;background:none;color:var(--muted);cursor:pointer;padding:4px;border-radius:6px}
+.hist li:hover .del{opacity:1}
+.hist .del:hover{color:var(--danger);background:var(--danger-soft)}
+.empty{text-align:center;padding:36px 20px;color:var(--muted)}
+.empty .ic{width:48px;height:48px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;margin:0 auto 10px}
+.empty strong{display:block;color:var(--text);margin-bottom:2px}
+.empty .spinner{margin-bottom:12px}
+
+/* ================= Revisão ================= */
+.kpis{display:grid;grid-template-columns:minmax(280px,1.6fr) repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px}
+.kpi{padding:14px 18px;display:flex;flex-direction:column;justify-content:center}
+.kpi .l{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:7px}
+.kpi .l i{width:8px;height:8px;border-radius:50%}
+.kpi .v{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.2;margin-top:2px}
+.kpi .s{font-size:12px;color:var(--muted)}
+.kpi.score{flex-direction:row;align-items:center;justify-content:flex-start;gap:16px;cursor:pointer;transition:border-color .15s}
+.kpi.score:hover{border-color:var(--border-strong)}
+.ring{--p:0;--gc:var(--primary);width:78px;height:78px;border-radius:50%;flex:none;display:grid;place-items:center;background:conic-gradient(var(--gc) calc(var(--p) * 1%),var(--surface-3) 0);transition:background .4s}
+.ring .in{width:64px;height:64px;border-radius:50%;background:var(--surface);display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:1.05}
+.ring b{font-size:19px;letter-spacing:-.03em}
+.ring span{font-size:10px;color:var(--muted)}
+.score .t{font-weight:600;font-size:15px}
+.score .sub{font-size:12.5px;color:var(--muted);margin-top:2px}
+.delta{display:inline-flex;align-items:center;gap:3px;font-size:12px;font-weight:600;padding:2px 7px;border-radius:99px;background:var(--ok-soft);color:var(--ok);margin-top:5px}
+
+.toolbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:16px}
+
+.work{display:grid;grid-template-columns:minmax(0,1fr) 430px;gap:16px;align-items:start}
+.pane{height:clamp(480px,calc(100vh - 292px),2400px);display:flex;flex-direction:column;overflow:hidden}
+.pane-h{display:flex;align-items:center;gap:10px;padding:12px 18px;border-bottom:1px solid var(--border);min-height:54px}
+.side .pane-h{padding:10px 12px;overflow-x:auto}
+.side .seg button{padding:6px 9px}
+.pane-h .ttl{font-weight:600;font-size:14px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:12px;color:var(--muted);margin-left:auto}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.legend i{width:12px;height:3px;border-radius:2px}
+.doc-wrap{position:relative;flex:1;min-height:0;display:flex}
+.doc{flex:1;padding:34px 48px;overflow:auto;font:17px/1.8 "Source Serif 4",Georgia,serif;white-space:pre-wrap;word-wrap:break-word;color:var(--text)}
+.doc-edit{flex:1;width:100%;border:0;outline:none;background:transparent;resize:none;padding:34px 48px;font:17px/1.8 "Source Serif 4",Georgia,serif;color:var(--text)}
+.err{cursor:pointer;border-radius:3px;text-decoration:underline wavy;text-decoration-thickness:1.5px;text-underline-offset:4px;text-decoration-skip-ink:none;transition:background .15s}
+.err:hover,.err.active{background:var(--surface-2)}
+.err.active{outline:2px solid var(--primary);outline-offset:1px}
+.c-ortografia{text-decoration-color:var(--c-ortografia)}
+.c-gramatica{text-decoration-color:var(--c-gramatica)}
+.c-pontuacao{text-decoration-color:var(--c-pontuacao)}
+.c-tipografia{text-decoration-color:var(--c-tipografia)}
+.c-estilo{text-decoration-color:var(--c-estilo)}
+.c-outros{text-decoration-color:var(--c-outros)}
+
+.loading{position:absolute;inset:0;background:color-mix(in srgb,var(--surface) 88%,transparent);display:grid;place-items:center;z-index:5}
+.loading .box{text-align:center;width:min(340px,80%)}
+.spinner{width:34px;height:34px;border:3px solid var(--surface-3);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 12px}
+.spinner.sm{width:24px;height:24px;border-width:2.5px;margin:0;flex:none}
+.btn .spinner{width:15px;height:15px;border-width:2px;margin:0;border-color:rgba(255,255,255,.35);border-top-color:#fff}
+@keyframes spin{to{transform:rotate(360deg)}}
+.progress{height:6px;background:var(--surface-3);border-radius:99px;overflow:hidden;margin-top:10px}
+.progress i{display:block;height:100%;width:0;background:var(--primary);transition:width .3s}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px;border-bottom:1px solid var(--border)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:99px;border:1px solid var(--border);background:transparent;cursor:pointer;font-size:12.5px;font-weight:500}
+.chip .dot{width:8px;height:8px;border-radius:50%}
+.chip .n{color:var(--muted)}
+.chip.on{background:var(--text);color:var(--surface);border-color:var(--text)}
+.chip.on .n{color:inherit;opacity:.7}
+.side-actions{display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--border)}
+.side-actions .btn{flex:1;justify-content:center;font-size:13px;padding:7px 10px}
+.scroll{overflow:auto;flex:1;min-height:0}
+.list{padding:10px}
+.sg{border:1px solid var(--border);border-left:3px solid var(--cc);border-radius:10px;padding:12px 13px;margin-bottom:8px;background:var(--surface);transition:border-color .15s,box-shadow .15s;cursor:pointer}
+.sg:hover{box-shadow:var(--shadow-sm);border-color:var(--border-strong);border-left-color:var(--cc)}
+.sg.active{border-color:var(--primary);border-left-color:var(--cc);box-shadow:0 0 0 3px var(--primary-soft)}
+.sg .head{display:flex;align-items:center;gap:7px;font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--cc)}
+.sg .head .sh{color:var(--muted);font-weight:500;text-transform:none;letter-spacing:0;font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sg .msg{margin:6px 0 8px;font-size:13.5px;color:var(--text-2)}
+.sg .ctx{font-size:13.5px;color:var(--muted);background:var(--surface-2);border-radius:7px;padding:7px 10px;font-family:"Source Serif 4",Georgia,serif}
+.sg .ctx mark{background:transparent;color:var(--danger);font-weight:600;text-decoration:line-through}
+.sugs{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.sug{border:1px solid color-mix(in srgb,var(--ok) 30%,transparent);background:var(--ok-soft);color:var(--ok);font-weight:600;padding:4px 10px;border-radius:7px;cursor:pointer;font-size:13.5px}
+.sug:hover{filter:brightness(.96)}
+.sug.empty{font-style:italic}
+.links{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:9px;font-size:12.5px}
+.link{border:0;background:none;padding:0;color:var(--muted);cursor:pointer}
+.link:hover{color:var(--text);text-decoration:underline}
+
+/* Avaliação */
+.ava-h{padding:12px 14px;border-bottom:1px solid var(--border);display:grid;gap:8px;background:var(--surface)}
+.ava-row{display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:8px}
+.ava-h .input{padding:7px 10px;font-size:13px}
+.ava{padding:14px}
+.total{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:12px;background:var(--surface-2);margin-bottom:12px}
+.total .big{font-size:30px;font-weight:700;letter-spacing:-.03em;line-height:1.1}
+.total .of{color:var(--muted);font-size:14px;font-weight:500;letter-spacing:0}
+.total .lbl{font-size:12.5px;color:var(--muted);margin-top:3px}
+.total .bar{height:7px;border-radius:99px;background:var(--surface-3);overflow:hidden;margin-top:8px}
+.total .bar i{display:block;height:100%;border-radius:99px;transition:width .4s}
+.ava-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.ava-actions .btn{flex:1;justify-content:center}
+.src-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;background:var(--surface-3);color:var(--text-2)}
+.src-badge.ai{background:var(--ai-soft);color:var(--ai)}
+.src-badge.man{background:var(--warn-soft);color:var(--warn)}
+.grp{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:16px 2px 8px}
+.crit{border:1px solid var(--border);border-radius:12px;padding:12px 13px;margin-bottom:10px;background:var(--surface)}
+.crit .ch{display:flex;align-items:flex-start;gap:10px}
+.crit .cn{flex:1;min-width:0}
+.crit .cn b{font-size:13.5px;display:block;letter-spacing:-.005em}
+.crit .cn small{color:var(--muted);font-size:12px;line-height:1.4;display:block;margin-top:2px}
+.crit select{border:1px solid var(--border-strong);background:var(--surface-2);border-radius:8px;padding:5px 6px;font-weight:700;font-variant-numeric:tabular-nums;cursor:pointer;color:var(--text);max-width:96px}
+.crit .cbar{height:6px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin:10px 0 8px}
+.crit .cbar i{display:block;height:100%;border-radius:99px;transition:width .3s}
+.cmeta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:11.5px;color:var(--muted);margin-bottom:6px}
+.crit ul{margin:0;padding-left:17px;font-size:12.5px;color:var(--text-2)}
+.crit li{margin:3px 0}
+.aic{margin-top:8px;font-size:12.5px;padding:8px 10px;border-radius:8px;background:var(--ai-soft);color:var(--text-2)}
+.aic b{color:var(--ai)}
+.formula{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;background:var(--surface-2);padding:10px 12px;border-radius:9px;margin-bottom:10px;line-height:1.6}
+.zero-box{display:flex;gap:8px;padding:10px 12px;border-radius:10px;background:var(--danger-soft);color:var(--danger);font-size:13px;margin-bottom:12px}
+.warn-box{padding:10px 12px;border-radius:10px;background:var(--warn-soft);color:var(--warn);font-size:12.5px;margin-bottom:12px}
+.warn-box ul{margin:0;padding-left:16px}
+.ai-sum{border:1px solid color-mix(in srgb,var(--ai) 30%,transparent);border-radius:12px;padding:12px 14px;margin-bottom:12px;background:color-mix(in srgb,var(--ai-soft) 55%,var(--surface))}
+.ai-sum h4{margin:0 0 6px;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--ai)}
+.ai-sum p{margin:0 0 8px;font-size:13px;color:var(--text-2)}
+.ai-sum ul{margin:0 0 6px;padding-left:17px;font-size:12.5px;color:var(--text-2)}
+.disc{font-size:11.5px;color:var(--muted);margin:12px 2px 0;line-height:1.5}
+
+/* Análise */
+.ana{padding:16px 18px}
+.ana h3{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin:4px 0 12px;font-weight:600}
+.ana section+section{margin-top:22px;padding-top:18px;border-top:1px solid var(--border)}
+.bar-row{display:grid;grid-template-columns:96px 1fr 34px;align-items:center;gap:10px;font-size:13px;margin-bottom:9px}
+.bar-row .track{height:8px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.bar-row .track i{display:block;height:100%;border-radius:99px;transition:width .4s}
+.bar-row b{text-align:right;font-variant-numeric:tabular-nums}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.metric{background:var(--surface-2);border-radius:10px;padding:10px 12px}
+.metric .v{font-size:18px;font-weight:700;letter-spacing:-.01em}
+.metric .l{font-size:12px;color:var(--muted)}
+.read-meter{height:8px;border-radius:99px;background:linear-gradient(90deg,var(--danger),var(--warn),var(--ok));position:relative;margin:10px 0 6px}
+.read-meter i{position:absolute;top:50%;width:14px;height:14px;border-radius:50%;background:var(--surface);border:3px solid var(--text);transform:translate(-50%,-50%)}
+.read-scale{display:flex;justify-content:space-between;font-size:11px;color:var(--muted)}
+.rules{list-style:none;margin:0;padding:0}
+.rules li{display:flex;gap:10px;align-items:center;padding:7px 0;font-size:13px;border-bottom:1px dashed var(--border)}
+.rules li:last-child{border-bottom:0}
+.rules .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.rules span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rules b{font-variant-numeric:tabular-nums}
+
+/* Original */
+.orig{padding:12px;display:grid;gap:14px}
+.orig figure{margin:0}
+.orig img{width:100%;border-radius:10px;border:1px solid var(--border);display:block;cursor:zoom-in}
+.orig figcaption{font-size:12px;color:var(--muted);margin-top:5px;text-align:center}
+
+/* Menu suspenso */
+.menu{position:absolute;right:0;top:calc(100% + 6px);z-index:30;padding:6px;min-width:250px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.16)}
+.menu button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:9px 10px;border-radius:8px;cursor:pointer;text-align:left;font-size:13.5px}
+.menu button:hover{background:var(--surface-2)}
+.menu button small{display:block;color:var(--muted);font-size:12px}
+.menu svg{width:17px;height:17px;color:var(--muted)}
+
+/* Popover */
+.pop{position:fixed;z-index:50;width:330px;max-width:calc(100vw - 24px);background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 14px 44px rgba(0,0,0,.2);padding:4px}
+.pop .sg{border:0;margin:0;cursor:default;box-shadow:none}
+
+/* Modal */
+.modal{position:fixed;inset:0;background:rgba(8,10,16,.55);display:grid;place-items:center;z-index:60;padding:16px}
+.dialog{background:var(--surface);border:1px solid var(--border);border-radius:16px;width:min(520px,100%);max-height:calc(100vh - 32px);overflow:auto;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.dialog.wide{width:min(660px,100%)}
+.dialog h2{margin:0 0 4px;font-size:18px}
+.dialog p{margin:0 0 12px;color:var(--muted);font-size:13.5px}
+.dialog label{display:block;font-size:13px;font-weight:600;margin:12px 0 5px}
+.dialog label.switch{display:flex;font-weight:500}
+.dialog .hint{font-size:12px;margin:6px 0 0}
+textarea.input{min-height:150px;resize:vertical}
+.dialog .actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px;position:sticky;bottom:-24px;background:var(--surface);padding:12px 0 0}
+.set-sec{padding:16px 0;border-top:1px solid var(--border)}
+.set-sec:first-of-type{border-top:0;padding-top:8px}
+.set-sec h3{font-size:14px;margin:0 0 4px;display:flex;align-items:center;gap:8px}
+.tag-opt{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;background:var(--ai-soft);color:var(--ai);padding:2px 7px;border-radius:99px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:0 10px}
+
+/* Toast */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);opacity:0;background:var(--text);color:var(--surface);padding:10px 16px;border-radius:10px;font-size:13.5px;transition:all .25s;z-index:70;pointer-events:none;max-width:calc(100vw - 32px);box-shadow:0 8px 24px rgba(0,0,0,.2)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ================= Responsivo ================= */
+@media (max-width:1280px){
+  .kpis{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .kpi.score{grid-column:1/-1}
+  .pane{height:clamp(480px,calc(100vh - 380px),2400px)}
+}
+@media (max-width:1180px){
+  .modes{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:1100px){
+  .work{grid-template-columns:minmax(0,1fr)}
+  .pane{height:auto}
+  .doc,.doc-edit{min-height:50vh}
+  .doc-edit{height:60vh}
+  .side .scroll{max-height:75vh}
+  .home-grid{grid-template-columns:minmax(0,1fr)}
+  .stats4{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:900px){
+  .app{grid-template-columns:1fr}
+  .sidebar{position:fixed;left:0;top:0;bottom:0;width:264px;transform:translateX(-100%);transition:transform .2s}
+  .app.nav-open .sidebar{transform:none}
+  .app.nav-open .scrim{display:block;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:35}
+  .btn.menu-btn{display:inline-flex}
+  .topbar{padding:0 16px}
+  .page{padding:16px 16px 40px}
+}
+@media (max-width:600px){
+  .kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .stats4{gap:10px}
+  .stat{padding:12px;gap:10px}
+  .stat .ic{width:36px;height:36px}
+  .stat .v{font-size:18px}
+  .card-b{padding:16px}
+  .doc,.doc-edit{padding:20px 18px}
+  .toolbar .btn .lbl{display:none}
+  .legend{display:none}
+  .topbar .hide-sm{display:none}
+  .welcome h2{font-size:20px}
+  .fgrid{grid-template-columns:minmax(0,1fr)}
+  .cam{grid-template-columns:minmax(0,1fr)}
+  .engine{grid-template-columns:minmax(0,1fr)}
+  .mode{padding:10px}
+  .mode small{display:none}
+  .seg.full button .lbl-l{display:none}
+  .opts .btn.primary{width:100%;justify-content:center}
+  .grid2{grid-template-columns:1fr}
+  .grid4{grid-template-columns:1fr 1fr}
+  .dialog{padding:18px}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- ================= Barra lateral ================= -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V5h11v2"/><path d="M9.5 5v12"/><path d="m13 15 3 3 5-6"/></svg></div>
+      <div><b>Revisor</b><small>Correção de redações</small></div>
+    </div>
+
+    <div class="nav-label">Menu</div>
+    <nav class="nav">
+      <button data-nav="home" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Painel</button>
+      <button data-nav="review" id="navReview" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="m9 15 2 2 4-4"/></svg>Correção atual<span class="badge hidden" id="navBadge">0</span></button>
+      <button data-nav="history"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>Histórico</button>
+    </nav>
+
+    <div class="nav-label">Ferramentas</div>
+    <nav class="nav">
+      <button data-nav="dict"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/></svg>Dicionário pessoal</button>
+      <button data-nav="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg>Configurações</button>
+      <button data-nav="theme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>Alternar tema</button>
+    </nav>
+
+    <div class="sb-foot">
+      <div class="svc"><i id="svcDot"></i><span id="svcName">LanguageTool · serviço público</span></div>
+      <div class="svc"><i id="aiDot" class="off"></i><span id="aiName">Claude · não configurado</span></div>
+    </div>
+  </aside>
+  <div class="scrim" id="scrim"></div>
+
+  <!-- ================= Conteúdo ================= -->
+  <div class="main">
+    <header class="topbar">
+      <button class="btn ghost icon menu-btn" id="menuBtn" aria-label="Abrir menu"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg></button>
+      <div class="titles">
+        <h1 id="pageTitle">Painel</h1>
+        <div class="crumb" id="pageCrumb">Visão geral das suas correções</div>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn primary" id="topNew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg><span class="hide-sm">Nova correção</span></button>
+    </header>
+
+    <!-- ================= PAINEL (INÍCIO) ================= -->
+    <section class="page" id="home">
+      <div class="welcome">
+        <div>
+          <h2>Corrija redações com precisão</h2>
+          <p>ENEM, SSA (UPE) e concursos: envie pela câmera do celular, por arquivo ou texto e receba nota por competência, desvios apontados e relatório completo.</p>
+        </div>
+      </div>
+
+      <div class="stats4">
+        <div class="card stat"><div class="ic" style="background:var(--primary-soft);color:var(--primary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg></div><div><div class="v" id="hsDocs">0</div><div class="l">Textos corrigidos</div></div></div>
+        <div class="card stat"><div class="ic" style="background:var(--ok-soft);color:var(--ok)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></svg></div><div><div class="v" id="hsAvg">–</div><div class="l">Desempenho médio (0–10)</div></div></div>
+        <div class="card stat"><div class="ic" style="background:var(--warn-soft);color:var(--warn)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><div><div class="v" id="hsFixed">0</div><div class="l">Desvios corrigidos</div></div></div>
+        <div class="card stat"><div class="ic" style="background:color-mix(in srgb,var(--c-estilo) 14%,transparent);color:var(--c-estilo)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></svg></div><div><div class="v" id="hsWords">0</div><div class="l">Palavras analisadas</div></div></div>
+      </div>
+
+      <div class="home-grid">
+        <div class="card">
+          <div class="card-h"><div><h2>Nova correção</h2><p>Escolha o modelo, envie a redação e receba a avaliação</p></div></div>
+          <div class="card-b">
+            <!-- Passo 1 -->
+            <div class="step-h"><span class="num">1</span>Modelo de correção</div>
+            <div class="modes" id="modes">
+              <button class="mode" data-mode="enem"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg></span><b>ENEM</b><small>5 competências · 0 a 1000</small></button>
+              <button class="mode" data-mode="ssa"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18M5 21V10M19 21V10M9 21v-6h6v6"/><path d="m2 10 10-6 10 6"/></svg></span><b>SSA · UPE</b><small>Competências A–E · 0 a 10</small></button>
+              <button class="mode" data-mode="concurso"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 13h18"/></svg></span><b>Concursos</b><small>Cebraspe, FGV, FCC, Vunesp</small></button>
+              <button class="mode" data-mode="revisao"><span class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span><b>Revisão de texto</b><small>Ortografia, gramática e estilo · 0 a 10</small></button>
+            </div>
+            <div class="fgrid" id="essayFields">
+              <div class="fl" id="bancaWrap"><label for="banca">Banca</label>
+                <select class="input" id="banca">
+                  <option value="cebraspe">Cebraspe (Cespe)</option>
+                  <option value="fgv">FGV</option>
+                  <option value="fcc">FCC</option>
+                  <option value="vunesp">Vunesp</option>
+                </select>
+              </div>
+              <div class="fl"><label for="tema">Tema da proposta <span>(opcional, melhora a avaliação)</span></label>
+                <input class="input" id="tema" placeholder="Ex.: Desafios para a valorização da herança africana no Brasil" autocomplete="off">
+              </div>
+            </div>
+
+            <!-- Passo 2 -->
+            <div class="step-h" style="margin-top:22px"><span class="num">2</span>Envie a redação</div>
+            <div class="seg full" id="srcTabs">
+              <button data-src="foto" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>Foto<span class="lbl-l">&nbsp;/ imagem</span></button>
+              <button data-src="arquivo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>Arquivo</button>
+              <button data-src="texto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Texto</button>
+            </div>
+
+            <div id="srcFoto">
+              <div class="cam" id="camZone">
+                <label class="cam-btn">
+                  <input type="file" accept="image/*" capture="environment" id="camInput" class="hidden">
+                  <span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>
+                  <span><b>Tirar foto</b><small>Abre a câmera do celular · uma foto por página</small></span>
+                </label>
+                <label class="cam-btn alt">
+                  <input type="file" accept="image/*,.heic,.heif" multiple id="imgInput" class="hidden">
+                  <span class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg></span>
+                  <span><b>Escolher imagens</b><small>Galeria ou arquivos · arraste aqui · várias páginas</small></span>
+                </label>
+              </div>
+              <div class="thumbs" id="thumbs"></div>
+              <ul class="tips" id="photoTips">
+                <li><b>Boa luz</b> e sem sombras sobre a folha; evite o flash refletindo.</li>
+                <li>Fotografe <b>de cima</b>, com a folha inteira e reta no enquadramento.</li>
+                <li>Várias páginas? Adicione na <b>ordem</b> e use as setas para reorganizar.</li>
+              </ul>
+              <div class="engine" id="engineSel" role="radiogroup" aria-label="Como ler as fotos">
+                <button type="button" class="eng ai" data-engine="ai" role="radio">
+                  <span class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/></svg></span>
+                  <span><b>Leitura com Claude <span class="st" id="claudeSt">configurar</span></b><small>IA da Anthropic · lê letra manuscrita e conta as linhas da folha</small></span>
+                </button>
+                <button type="button" class="eng" data-engine="local" role="radio">
+                  <span class="ei"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M12 18h.01"/></svg></span>
+                  <span><b>No dispositivo <span class="st ok">sem IA</span></b><small>Gratuito e privado · as fotos não saem do aparelho · ideal para letra de forma ou texto impresso</small></span>
+                </button>
+              </div>
+              <div class="ocr-opts">
+                <label class="switch" title="Converte para tons de cinza e aumenta o contraste antes de ler"><input type="checkbox" id="enhance" checked> Realçar imagem</label>
+              </div>
+              <div class="ocr-run hidden" id="ocrRun">
+                <div class="spinner sm"></div>
+                <div><b id="ocrTitle">Preparando…</b><div id="ocrMsg"></div><div class="progress"><i id="ocrBar"></i></div></div>
+              </div>
+            </div>
+
+            <div id="srcArquivo" class="hidden">
+              <label class="drop" id="drop">
+                <input type="file" id="fileInput" class="hidden" accept=".txt,.md,.docx,.pdf,.html,.htm,.rtf,.csv,image/*,.heic,.heif" multiple>
+                <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg></div>
+                <strong>Arraste o arquivo aqui ou clique para selecionar</strong>
+                <div class="fmt">Até 15 MB · PDFs escaneados e imagens vão para a transcrição</div>
+                <div class="fmts"><span>DOCX</span><span>PDF</span><span>TXT</span><span>MD</span><span>HTML</span><span>RTF</span><span>JPG</span><span>PNG</span><span>HEIC</span></div>
+              </label>
+            </div>
+
+            <div id="srcTexto" class="hidden">
+              <div class="banner hidden" id="transBanner">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 1 1-5.9-9.1"/><path d="M22 4 12 14l-3-3"/></svg>
+                <div><b>Transcrição concluída</b><span id="transMsg"></span></div>
+                <button class="link" id="transView" type="button">ver fotos</button>
+              </div>
+              <textarea class="paste" id="pasteArea" placeholder="Cole ou digite aqui a redação…"></textarea>
+              <div class="paste-meta"><span id="pasteHint">Separe os parágrafos com uma quebra de linha.</span><span id="pasteCount">0 palavras</span></div>
+            </div>
+
+            <div class="opts">
+              <div class="field">Idioma
+                <select id="lang">
+                  <option value="pt-BR" selected>Português (Brasil)</option>
+                  <option value="pt-PT">Português (Portugal)</option>
+                  <option value="en-US">Inglês (EUA)</option>
+                  <option value="en-GB">Inglês (Reino Unido)</option>
+                  <option value="es">Espanhol</option>
+                  <option value="fr">Francês</option>
+                  <option value="de-DE">Alemão</option>
+                  <option value="it">Italiano</option>
+                </select>
+              </div>
+              <label class="switch" title="Ativa regras extras de estilo e formalidade"><input type="checkbox" id="picky"> Revisão rigorosa</label>
+              <div class="spacer"></div>
+              <button class="btn primary lg" id="btnGo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg><span id="goLbl">Corrigir redação</span></button>
+            </div>
+
+            <div class="note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg><span>O texto é enviado ao LanguageTool para a verificação gramatical e, se você usar a leitura ou a avaliação com Claude, à API da Anthropic. A leitura no dispositivo processa as fotos localmente, sem IA. Para dados sigilosos, use um servidor próprio do LanguageTool em Configurações.</span></div>
+          </div>
+        </div>
+
+        <div class="card" id="historyCard">
+          <div class="card-h"><div><h2>Correções recentes</h2><p>Salvas apenas neste navegador</p></div></div>
+          <ul class="hist" id="histList"></ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= CORREÇÃO ================= -->
+    <section class="page hidden" id="workspace">
+      <div class="kpis">
+        <div class="card kpi score" id="scoreCard" title="Ver avaliação detalhada">
+          <div class="ring" id="ring"><div class="in"><b id="gradeVal">–</b><span id="gradeOf">de 10</span></div></div>
+          <div style="min-width:0">
+            <div class="t" id="gradeLbl">Nota do texto</div>
+            <div class="sub" id="gradeSub"></div>
+            <div class="delta hidden" id="gradeDelta"></div>
+          </div>
+        </div>
+        <div class="card kpi"><div class="l"><i style="background:var(--text-2)"></i>Encontrados</div><div class="v" id="cFound">0</div><div class="s">na última análise</div></div>
+        <div class="card kpi"><div class="l"><i style="background:var(--danger)"></i>Pendentes</div><div class="v" id="cPending" style="color:var(--danger)">0</div><div class="s">aguardando revisão</div></div>
+        <div class="card kpi"><div class="l"><i style="background:var(--ok)"></i>Corrigidos</div><div class="v" id="cFixed" style="color:var(--ok)">0</div><div class="s" id="cFixedPct">0% do total</div></div>
+        <div class="card kpi"><div class="l"><i style="background:var(--muted)"></i>Ignorados</div><div class="v" id="cIgnored">0</div><div class="s">não contam na nota</div></div>
+      </div>
+
+      <div class="toolbar">
+        <button class="btn" id="btnUndo" disabled title="Desfazer (Ctrl+Z)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-15-6.7L3 13"/></svg><span class="lbl">Desfazer</span></button>
+        <button class="btn" id="btnEdit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg><span class="lbl" id="editLbl">Editar texto</span></button>
+        <button class="btn" id="btnRecheck"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/></svg><span class="lbl">Verificar novamente</span></button>
+        <div class="spacer"></div>
+        <button class="btn" id="btnCopy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg><span class="lbl">Copiar</span></button>
+        <div style="position:relative">
+          <button class="btn primary" id="btnDownload"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg><span class="lbl">Exportar</span></button>
+          <div id="dlMenu" class="menu hidden">
+            <button data-dl="report"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/></svg><span>Relatório da correção<small>Nota, competências, erros e texto (.html)</small></span></button>
+            <button data-dl="docx"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><span>Texto revisado · Word<small>Abre no Microsoft Word (.doc)</small></span></button>
+            <button data-dl="txt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>Texto revisado · simples<small>Arquivo de texto (.txt)</small></span></button>
+            <button data-dl="html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg><span>Texto revisado · web<small>Página HTML (.html)</small></span></button>
+          </div>
+        </div>
+      </div>
+
+      <div class="work">
+        <div class="card pane">
+          <div class="pane-h">
+            <span class="ttl">Documento</span>
+            <div class="legend">
+              <span><i style="background:var(--c-ortografia)"></i>Ortografia</span>
+              <span><i style="background:var(--c-gramatica)"></i>Gramática</span>
+              <span><i style="background:var(--c-pontuacao)"></i>Pontuação</span>
+              <span><i style="background:var(--c-estilo)"></i>Estilo</span>
+              <span><i style="background:var(--c-tipografia)"></i>Tipografia</span>
+            </div>
+          </div>
+          <div class="doc-wrap">
+            <div class="doc" id="doc"></div>
+            <textarea class="doc-edit hidden" id="docEdit" spellcheck="false"></textarea>
+            <div class="loading hidden" id="loading">
+              <div class="box">
+                <div class="spinner"></div>
+                <strong id="loadTitle">Analisando o texto…</strong>
+                <div id="loadMsg" style="color:var(--muted);font-size:13px;margin-top:4px"></div>
+                <div class="progress"><i id="loadBar"></i></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <aside class="card pane side">
+          <div class="pane-h">
+            <div class="seg" id="sideTabs">
+              <button data-side="ava">Avaliação</button>
+              <button data-side="sug" class="on">Sugestões <span class="n" id="sugCount">0</span></button>
+              <button data-side="ana">Análise</button>
+              <button data-side="orig" id="tabOrig" class="hidden">Foto</button>
+            </div>
+          </div>
+          <div id="sidSug" style="display:flex;flex-direction:column;flex:1;min-height:0">
+            <div class="chips" id="tabs"></div>
+            <div class="side-actions">
+              <button class="btn" id="btnApplyAll"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Aplicar todas</button>
+              <button class="btn" id="btnIgnoreAll">Ignorar todas</button>
+            </div>
+            <div class="scroll"><div class="list" id="list"></div></div>
+          </div>
+          <div id="sidAva" style="display:none;flex-direction:column;flex:1;min-height:0">
+            <div class="ava-h">
+              <select class="input" id="avaMode" aria-label="Modelo de correção">
+                <option value="enem">ENEM · 5 competências (0–1000)</option>
+                <option value="ssa">SSA · UPE · competências A–E (0–10)</option>
+                <option value="concurso:cebraspe">Concurso · Cebraspe</option>
+                <option value="concurso:fgv">Concurso · FGV</option>
+                <option value="concurso:fcc">Concurso · FCC</option>
+                <option value="concurso:vunesp">Concurso · Vunesp</option>
+                <option value="revisao">Revisão de texto (sem competências)</option>
+              </select>
+              <div class="ava-row">
+                <input class="input" id="avaTema" placeholder="Tema da proposta (opcional)" autocomplete="off">
+                <input class="input" id="avaLines" type="number" min="1" max="200" inputmode="numeric" title="Linhas escritas na folha (deixe vazio para estimar)" placeholder="Linhas">
+              </div>
+            </div>
+            <div class="scroll"><div class="ava" id="avaBody"></div></div>
+          </div>
+          <div class="scroll hidden" id="sidAna"><div class="ana" id="ana"></div></div>
+          <div class="scroll hidden" id="sidOrig"><div class="orig" id="orig"></div></div>
+        </aside>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="pop hidden" id="pop"></div>
+
+<!-- Modal configurações -->
+<div class="modal hidden" id="settingsModal">
+  <div class="dialog wide">
+    <h2>Configurações</h2>
+    <div class="set-sec">
+      <h3>Claude · IA da Anthropic <span class="tag-opt">opcional</span></h3>
+      <p>Lê redações manuscritas a partir das fotos e avalia cada competência com justificativas. Crie a chave em <a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener">console.anthropic.com</a>; ela fica salva somente neste navegador.</p>
+      <label for="aiKey">Chave da API</label>
+      <div class="key-wrap">
+        <input class="input" type="password" id="aiKey" placeholder="sk-ant-…" autocomplete="off" spellcheck="false">
+        <button class="btn" type="button" id="aiKeyShow" title="Mostrar ou ocultar a chave">Mostrar</button>
+      </div>
+      <div class="grid2">
+        <div><label for="aiModelSel">Modelo</label>
+          <select class="input" id="aiModelSel">
+            <option value="claude-sonnet-5-5">Claude Sonnet 5.5 · recomendado</option>
+            <option value="claude-opus-5-5">Claude Opus 5.5 · máxima precisão</option>
+            <option value="claude-haiku-5-5">Claude Haiku 5.5 · mais rápido e econômico</option>
+            <option value="custom">Outro (informar o nome)</option>
+          </select>
+        </div>
+        <div id="aiModelWrap" class="hidden"><label for="aiModel">Nome do modelo</label><input class="input" id="aiModel" placeholder="ex.: claude-sonnet-5-5" autocomplete="off" spellcheck="false"></div>
+      </div>
+      <div class="test-row">
+        <button class="btn" type="button" id="aiTest">Testar conexão</button>
+        <span class="test-st" id="aiTestSt"></span>
+      </div>
+      <label class="switch" style="margin-top:14px"><input type="checkbox" id="aiAuto"> Avaliar com Claude automaticamente após cada correção</label>
+      <p class="hint">Use a chave apenas em dispositivos de confiança. O uso é cobrado pela Anthropic na sua conta. Sem chave, tudo continua funcionando: a leitura das fotos é feita no dispositivo e a nota é estimada automaticamente.</p>
+    </div>
+    <div class="set-sec">
+      <h3>Concursos</h3>
+      <p>Pontuação máxima da redação por banca. Os editais variam: confira o do seu concurso.</p>
+      <div class="grid4">
+        <div><label for="mxCebraspe">Cebraspe</label><input class="input" type="number" min="1" step="0.5" id="mxCebraspe"></div>
+        <div><label for="mxFgv">FGV</label><input class="input" type="number" min="1" step="0.5" id="mxFgv"></div>
+        <div><label for="mxFcc">FCC</label><input class="input" type="number" min="1" step="0.5" id="mxFcc"></div>
+        <div><label for="mxVunesp">Vunesp</label><input class="input" type="number" min="1" step="0.5" id="mxVunesp"></div>
+      </div>
+      <label for="cbMult">Multiplicador de erros (Cebraspe)</label>
+      <input class="input" type="number" min="0.5" step="0.5" id="cbMult" style="max-width:160px">
+      <p class="hint">Fórmula: NR = NC − multiplicador × NE ÷ TL. O mais comum é 2; alguns editais usam 3 ou mais.</p>
+    </div>
+    <div class="set-sec">
+      <h3>Verificador gramatical (LanguageTool)</h3>
+      <p>Por padrão é usado o serviço público e gratuito (limite de ~20 requisições por minuto). Você pode apontar para um servidor próprio ou usar uma conta Premium.</p>
+      <label for="cfgUrl">Endereço da API</label>
+      <input class="input" type="text" id="cfgUrl" placeholder="https://api.languagetool.org/v2/check">
+      <div class="grid2">
+        <div><label for="cfgUser">Usuário Premium (opcional)</label><input class="input" type="text" id="cfgUser" placeholder="seu@email.com" autocomplete="off"></div>
+        <div><label for="cfgKey">Chave Premium (opcional)</label><input class="input" type="password" id="cfgKey" placeholder="••••••••" autocomplete="off"></div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn" data-close>Cancelar</button>
+      <button class="btn primary" id="cfgSave">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal dicionário -->
+<div class="modal hidden" id="dictModal">
+  <div class="dialog">
+    <h2>Dicionário pessoal</h2>
+    <p>Palavras que nunca serão marcadas como erro de ortografia (nomes próprios, termos técnicos, siglas). Uma por linha.</p>
+    <textarea class="input" id="dictArea"></textarea>
+    <div class="actions">
+      <button class="btn" data-close>Cancelar</button>
+      <button class="btn primary" id="dictSave">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ========= Configuração ========= */
+const DEFAULT_API = 'https://api.languagetool.org/v2/check';
+const CHUNK_SIZE = 9000;           // caracteres por requisição (limite do plano gratuito = 20 KB por requisição)
+const MAX_BYTES_PER_MIN = 70000;   // plano gratuito: até ~75 KB de texto por minuto
+const MAX_REQ_PER_MIN = 18;        // plano gratuito: até 20 requisições por minuto
+const MAX_ATTEMPTS = 6;            // tentativas por trecho antes de desistir
+const HISTORY_MAX = 30;            // correções guardadas no histórico
+const CHARS_PER_LINE = 66;         // média de caracteres por linha manuscrita (folha oficial)
+const MAX_PHOTOS = 10;
+const TESS_URL = 'https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+
+/* Pesos de cada categoria na nota da revisão simples */
+const WEIGHTS = { ortografia: 1, gramatica: 1, pontuacao: 0.6, tipografia: 0.3, estilo: 0.35, outros: 0.5 };
+
+const CATS = {
+  ortografia: 'Ortografia',
+  gramatica:  'Gramática',
+  pontuacao:  'Pontuação',
+  tipografia: 'Tipografia',
+  estilo:     'Estilo',
+  outros:     'Outros'
+};
+
+const AI_PROVIDERS = { anthropic: { name: 'Claude', model: 'claude-sonnet-5-5' } };
+const CLAUDE_MODELS = ['claude-sonnet-5-5', 'claude-opus-5-5', 'claude-haiku-5-5'];
+const AI_IMG_MAX = 1568;   // maior lado recomendado pela Anthropic para imagens
+const BANCAS = { cebraspe: 'Cebraspe', fgv: 'FGV', fcc: 'FCC', vunesp: 'Vunesp' };
+const BANCA_MAX = { cebraspe: 10, fgv: 30, fcc: 100, vunesp: 40 };
+const MODE_NAMES = { revisao: 'Revisão', enem: 'ENEM', ssa: 'SSA', concurso: 'Concurso' };
+
+if (window.pdfjsLib) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+}
+
+/* ========= Armazenamento local seguro ========= */
+const store = {
+  get(k, d) { try { const v = localStorage.getItem('revisor.' + k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem('revisor.' + k, JSON.stringify(v)); return true; } catch { return false; } }
+};
+
+/* ========= Estado ========= */
+const state = {
+  view: 'home',
+  sideTab: 'sug',
+  src: 'foto',
+  docId: null,
+  text: '',
+  matches: [],
+  filter: 'all',
+  fileName: '',
+  activeId: null,
+  history: [],
+  editing: false,
+  busy: false,
+  found: 0,            // total de erros encontrados na última análise
+  ignored: 0,          // erros ignorados manualmente
+  failedChunks: 0,     // trechos que o serviço não conseguiu analisar
+  firstScore: null,    // nota do texto original (antes das correções)
+  ignoredRules: new Set(),
+  dict: new Set(store.get('dict', []).map(w => w.toLowerCase())),
+  /* correção de redações */
+  mode: store.get('mode', 'enem'),
+  banca: store.get('banca', 'cebraspe'),
+  tema: '',
+  linesUser: null,     // linhas informadas pelo corretor
+  overrides: {},       // notas ajustadas manualmente, por modelo
+  ai: null,            // última avaliação da IA
+  aiBusy: false,
+  zero: false,         // anulação manual
+  fixedCats: [],       // categorias dos desvios já corrigidos (continuam contando na nota)
+  images: []           // fotos da redação atual
+};
+if (!MODE_NAMES[state.mode]) state.mode = 'enem';
+if (!BANCAS[state.banca]) state.banca = 'cebraspe';
+let uid = 0;
+const photos = [];         // fotos aguardando transcrição
+let pendingImages = [];    // fotos já transcritas, aguardando a correção
+let ocrBusy = false;
+let pendingLines = null;   // linhas contadas pelo Claude na folha
+state.engine = store.get('ocrEngine', null);
+
+/* ========= Atalhos DOM ========= */
+const $ = id => document.getElementById(id);
+const el = {
+  app: $('app'), home: $('home'), workspace: $('workspace'), drop: $('drop'), fileInput: $('fileInput'),
+  lang: $('lang'), picky: $('picky'), pasteArea: $('pasteArea'),
+  doc: $('doc'), docEdit: $('docEdit'), list: $('list'), tabs: $('tabs'), pop: $('pop'), ana: $('ana'),
+  loading: $('loading'), loadTitle: $('loadTitle'), loadMsg: $('loadMsg'), loadBar: $('loadBar'),
+  pageTitle: $('pageTitle'), pageCrumb: $('pageCrumb'),
+  btnUndo: $('btnUndo'), btnEdit: $('btnEdit'), editLbl: $('editLbl'), dlMenu: $('dlMenu'), toast: $('toast'),
+  tema: $('tema'), banca: $('banca'), enhance: $('enhance'), thumbs: $('thumbs'),
+  avaBody: $('avaBody'), avaMode: $('avaMode'), avaTema: $('avaTema'), avaLines: $('avaLines')
+};
+
+/* ========= Utilidades ========= */
+const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const WORD_RE = /[\p{L}\p{N}]+(?:[-'’][\p{L}\p{N}]+)*/gu;
+const countWords = t => (t.match(WORD_RE) || []).length;
+const fmtN = n => n.toLocaleString('pt-BR');
+const fmt1 = n => n.toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+const fmtScore = v => v.toLocaleString('pt-BR', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const fmtDate = d => new Date(d).toLocaleString('pt-BR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+const r2 = v => Math.round(v * 100) / 100;
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const plural = (n, s, p) => `${fmtN(n)} ${n === 1 ? s : p}`;
+const normWord = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+/* Expressão com limites de palavra que funcionam com acentos */
+const W = (src, f = 'iu') => new RegExp('(?<![\\p{L}\\p{N}])(?:' + src + ')(?![\\p{L}\\p{N}])', f);
+
+let toastTimer;
+function toast(msg) {
+  el.toast.textContent = msg;
+  el.toast.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.toast.classList.remove('show'), 3200);
+}
+
+const scriptCache = {};
+function loadScript(src) {
+  if (!scriptCache[src]) scriptCache[src] = new Promise((res, rej) => {
+    const s = document.createElement('script');
+    s.src = src; s.async = true;
+    s.onload = res;
+    s.onerror = () => { delete scriptCache[src]; rej(new Error('Não foi possível carregar um componente. Verifique sua conexão.')); };
+    document.head.appendChild(s);
+  });
+  return scriptCache[src];
+}
+
+/* ========= Tema ========= */
+const savedTheme = store.get('theme', null);
+if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+function toggleTheme() {
+  const cur = document.documentElement.dataset.theme
+    || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  const next = cur === 'dark' ? 'light' : 'dark';
+  document.documentElement.dataset.theme = next;
+  store.set('theme', next);
+}
+
+/* ========= Navegação ========= */
+function showView(v) {
+  state.view = v;
+  el.home.classList.toggle('hidden', v !== 'home');
+  el.workspace.classList.toggle('hidden', v !== 'review');
+  document.querySelectorAll('.nav [data-nav]').forEach(b => b.classList.toggle('on', b.dataset.nav === v));
+  if (v === 'home') {
+    if (state.docId && state.text) { clearTimeout(saveTimer); saveHistory(); }   // grava a última nota antes de listar
+    el.pageTitle.textContent = 'Painel';
+    el.pageCrumb.textContent = 'Visão geral das suas correções';
+    renderHome();
+  } else {
+    el.pageTitle.textContent = state.fileName || 'Correção';
+    updateCrumb();
+  }
+  el.app.classList.remove('nav-open');
+  window.scrollTo(0, 0);
+}
+function updateCrumb() {
+  if (state.view !== 'review') return;
+  const words = countWords(state.text);
+  const model = isEssay() ? getRubric().title : 'Revisão de texto';
+  el.pageCrumb.textContent = `${model} · ${fmtN(words)} palavras · ${el.lang.options[el.lang.selectedIndex].text}`;
+}
+
+/* ========= Extração de texto dos arquivos ========= */
+const IMG_EXT = /\.(jpe?g|png|webp|gif|bmp|heic|heif|avif|tiff?)$/i;
+const isImage = f => (f.type && f.type.startsWith('image/')) || IMG_EXT.test(f.name || '');
+
+async function extractText(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'docx') {
+    if (!window.mammoth) throw new Error('Biblioteca de leitura DOCX não carregou. Verifique sua conexão.');
+    const res = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+    return res.value.replace(/\n{3,}/g, '\n\n').trim();
+  }
+  if (ext === 'pdf') {
+    if (!window.pdfjsLib) throw new Error('Biblioteca de leitura PDF não carregou. Verifique sua conexão.');
+    const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+    const pages = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      showLoading('Lendo PDF…', `Página ${i} de ${pdf.numPages}`, i / pdf.numPages);
+      const content = await (await pdf.getPage(i)).getTextContent();
+      let s = '';
+      for (const it of content.items) { s += it.str; if (it.hasEOL) s += '\n'; }
+      pages.push(s.trim());
+    }
+    // junta linhas quebradas no meio de frases
+    return pages.join('\n\n').replace(/([^\n.!?:;])\n(?=[a-zà-ú])/g, '$1 ').replace(/-\n(?=[a-zà-ú])/g, '').trim();
+  }
+  if (ext === 'doc') throw new Error('Arquivos .doc antigos não são suportados. Salve como .docx e tente novamente.');
+  const raw = await file.text();
+  if (ext === 'html' || ext === 'htm') {
+    const d = new DOMParser().parseFromString(raw, 'text/html');
+    d.querySelectorAll('script,style').forEach(n => n.remove());
+    return (d.body.innerText || d.body.textContent || '').trim();
+  }
+  if (ext === 'rtf') return rtfToText(raw);
+  return raw.replace(/\r\n?/g, '\n');
+}
+
+function rtfToText(rtf) {
+  return rtf
+    .replace(/\\'([0-9a-f]{2})/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/\\u(-?\d+)\??/g, (_, n) => String.fromCharCode(n < 0 ? 65536 + +n : +n))
+    .replace(/\\par[d]?\b ?/g, '\n')
+    .replace(/\{\\\*[^{}]*\}/g, '')
+    .replace(/\\[a-z]+-?\d* ?/gi, '')
+    .replace(/[{}]/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+/* PDF escaneado: converte as páginas em imagens para a transcrição */
+async function pdfToPhotos(file) {
+  const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+  const n = Math.min(pdf.numPages, MAX_PHOTOS);
+  const files = [];
+  for (let i = 1; i <= n; i++) {
+    const page = await pdf.getPage(i);
+    const vp = page.getViewport({ scale: 2 });
+    const cv = document.createElement('canvas');
+    cv.width = vp.width; cv.height = vp.height;
+    await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+    const blob = await new Promise(r => cv.toBlob(r, 'image/jpeg', 0.9));
+    files.push(new File([blob], `${file.name.replace(/\.pdf$/i, '')}-p${i}.jpg`, { type: 'image/jpeg' }));
+  }
+  return files;
+}
+
+/* ========= Divisão em blocos ========= */
+function chunkText(text) {
+  const chunks = [];
+  let start = 0;
+  while (start < text.length) {
+    let end = Math.min(start + CHUNK_SIZE, text.length);
+    if (end < text.length) {
+      const slice = text.slice(start, end);
+      let cut = slice.lastIndexOf('\n');
+      if (cut < CHUNK_SIZE * 0.5) cut = Math.max(slice.lastIndexOf('. '), slice.lastIndexOf('? '), slice.lastIndexOf('! ')) + 1;
+      if (cut < CHUNK_SIZE * 0.3) cut = slice.lastIndexOf(' ');
+      if (cut > 0) end = start + cut + 1;
+    }
+    chunks.push({ start, text: text.slice(start, end) });
+    start = end;
+  }
+  return chunks;
+}
+
+/* ========= Classificação ========= */
+function categorize(m) {
+  const id = ((m.rule && m.rule.category && m.rule.category.id) || '').toUpperCase();
+  const t = (m.rule && m.rule.issueType) || '';
+  if (id === 'TYPOS' || t === 'misspelling') return 'ortografia';
+  if (id === 'PUNCTUATION') return 'pontuacao';
+  if (id === 'TYPOGRAPHY' || t === 'typographical' || t === 'whitespace') return 'tipografia';
+  if (id === 'GRAMMAR' || id === 'CONFUSED_WORDS' || id === 'AGREEMENT' || t === 'grammar') return 'gramatica';
+  if (['STYLE','REDUNDANCY','REPETITIONS','REPETITIONS_STYLE','COLLOQUIALISMS','PLAIN_ENGLISH','SEMANTICS','FORMAL_SPEECH','CLICHES','WIKIPEDIA'].includes(id) || t === 'style' || t === 'register') return 'estilo';
+  return 'outros';
+}
+
+/* ========= Chamada à API (LanguageTool) ========= */
+const sentLog = [];
+const byteLen = s => new TextEncoder().encode(s).length;
+const usingOwnService = () => { const c = store.get('cfg', {}); return !!(c.url || (c.user && c.key)); };
+async function throttle(bytes) {
+  if (usingOwnService()) return;                       // servidor próprio ou Premium: sem limite local
+  for (;;) {
+    const now = Date.now();
+    while (sentLog.length && now - sentLog[0].t > 60000) sentLog.shift();
+    const used = sentLog.reduce((s, x) => s + x.bytes, 0);
+    if (!sentLog.length || (used + bytes <= MAX_BYTES_PER_MIN && sentLog.length < MAX_REQ_PER_MIN)) break;
+    const wait = Math.ceil((60000 - (now - sentLog[0].t)) / 1000) + 1;
+    el.loadMsg.textContent = `Aguardando o limite do serviço gratuito… ${wait}s`;
+    await sleep(1000);
+  }
+  sentLog.push({ t: Date.now(), bytes });
+}
+
+async function callAPI(text, attempt = 0) {
+  await throttle(byteLen(text));
+  const cfg = store.get('cfg', {});
+  const body = new URLSearchParams({ text, language: el.lang.value, motherTongue: 'pt-BR' });
+  if (el.picky.checked) body.set('level', 'picky');
+  if (cfg.user && cfg.key) { body.set('username', cfg.user); body.set('apiKey', cfg.key); }
+  let res;
+  try {
+    res = await fetch(cfg.url || DEFAULT_API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Accept': 'application/json' },
+      body
+    });
+  } catch {
+    if (attempt < MAX_ATTEMPTS - 1) {
+      for (let s = 5; s > 0; s--) { el.loadMsg.textContent = `Falha de conexão. Nova tentativa em ${s}s…`; await sleep(1000); }
+      return callAPI(text, attempt + 1);
+    }
+    throw new Error('Não foi possível conectar ao serviço de revisão. Verifique sua internet.');
+  }
+  if ((res.status === 429 || res.status >= 500) && attempt < MAX_ATTEMPTS - 1) {
+    const wait = res.status === 429 ? 60 : 8;
+    for (let s = wait; s > 0; s--) { el.loadMsg.textContent = `Serviço ocupado (${res.status}). Nova tentativa em ${s}s…`; await sleep(1000); }
+    return callAPI(text, attempt + 1);
+  }
+  if (!res.ok) {
+    const msg = await res.text().catch(() => '');
+    throw new Error(`Erro do serviço (${res.status}). ${msg.slice(0, 160)}`);
+  }
+  return res.json();
+}
+
+async function check() {
+  if (state.busy) return;
+  state.busy = true;
+  state.matches = [];
+  state.activeId = null;
+  state.found = 0;
+  state.ignored = 0;
+  state.failedChunks = 0;
+  render();
+  const chunks = chunkText(state.text);
+  let ok = false;
+  try {
+    for (let i = 0; i < chunks.length; i++) {
+      showLoading('Analisando o texto…', chunks.length > 1 ? `Trecho ${i + 1} de ${chunks.length}` : 'Verificando ortografia e gramática', i / chunks.length);
+      if (!chunks[i].text.trim()) continue;
+      let data;
+      try {
+        data = await callAPI(chunks[i].text);
+      } catch (e) {
+        state.failedChunks++;   // não interrompe: segue analisando os demais trechos
+        console.error(e);
+        continue;
+      }
+      for (const m of data.matches || []) {
+        state.matches.push({
+          id: ++uid,
+          offset: m.offset + chunks[i].start,
+          length: m.length,
+          message: m.message,
+          short: m.shortMessage || '',
+          replacements: (m.replacements || []).slice(0, 6).map(r => r.value),
+          ruleId: m.rule ? m.rule.id : '',
+          ruleDesc: m.rule ? m.rule.description : '',
+          cat: categorize(m)
+        });
+      }
+      state.found = state.matches.length;
+      el.loadBar.style.width = ((i + 1) / chunks.length * 100) + '%';
+    }
+    state.found = state.matches.length;
+    const n = activeMatches().length;
+    if (state.failedChunks) {
+      toast(`${state.failedChunks} de ${chunks.length} trechos não puderam ser analisados. Clique em "Verificar novamente".`);
+    } else {
+      ok = true;
+      if (state.firstScore == null) state.firstScore = computeScore().value;
+      toast(n ? `${n} ${n === 1 ? 'desvio encontrado' : 'desvios encontrados'} em todo o texto` : 'Nenhum problema encontrado!');
+    }
+  } catch (e) {
+    toast(e.message);
+    console.error(e);
+  } finally {
+    state.busy = false;
+    hideLoading();
+    render();
+  }
+  // avaliação automática com IA (se configurada)
+  if (ok && isEssay() && aiReady() && aiCfg().auto && !(state.ai && state.ai.key === getRubric().key)) aiGrade();
+}
+
+/* ========= Filtros ========= */
+function isIgnored(m) {
+  if (state.ignoredRules.has(m.ruleId)) return true;
+  if (m.cat === 'ortografia') {
+    const w = state.text.slice(m.offset, m.offset + m.length).toLowerCase();
+    if (state.dict.has(w)) return true;
+  }
+  return false;
+}
+const activeMatches = () => state.matches.filter(m => !isIgnored(m)).sort((a, b) => a.offset - b.offset);
+const visibleMatches = () => activeMatches().filter(m => state.filter === 'all' || m.cat === state.filter);
+
+/* ========= Contagem e nota (revisão simples) ========= */
+function tally() {
+  const pending = activeMatches().length;
+  const ignored = state.ignored + state.matches.filter(isIgnored).length;
+  const found = Math.max(state.found, pending + ignored);
+  const fixed = Math.max(0, found - pending - ignored);
+  return { found, pending, ignored, fixed };
+}
+
+/* Nota de 0 a 10: baseada na quantidade de erros pendentes (ponderados por gravidade)
+   a cada 100 palavras. 0 erros = 10; 1 erro/100 palavras ≈ 9; 2 ≈ 8; 5 ≈ 5,8; 10 ≈ 3,3. */
+function computeScore() {
+  const words = countWords(state.text);
+  if (!words) return { value: null, density: 0 };
+  const weighted = activeMatches().reduce((s, m) => s + (WEIGHTS[m.cat] ?? 0.5), 0);
+  const density = weighted / words * 100;
+  const value = Math.round(10 * Math.exp(-0.11 * density) * 10) / 10;
+  return { value, density };
+}
+function scoreInfo(v) {
+  if (v >= 9) return { lbl: 'Excelente', color: 'var(--ok)', soft: 'var(--ok-soft)' };
+  if (v >= 7) return { lbl: 'Bom', color: 'var(--primary)', soft: 'var(--primary-soft)' };
+  if (v >= 5) return { lbl: 'Regular', color: 'var(--warn)', soft: 'var(--warn-soft)' };
+  if (v >= 3) return { lbl: 'Fraco', color: 'var(--danger)', soft: 'var(--danger-soft)' };
+  return { lbl: 'Insuficiente', color: 'var(--danger)', soft: 'var(--danger-soft)' };
+}
+
+/* =====================================================================
+   CORREÇÃO DE REDAÇÕES: grades ENEM, SSA (UPE) e concursos
+   ===================================================================== */
+const isEssay = () => state.mode !== 'revisao';
+function concMax(b) { const m = store.get('concMax', {}); return +m[b] > 0 ? +m[b] : BANCA_MAX[b]; }
+function cbMult() { const v = +store.get('cbMult', 2); return v > 0 ? v : 2; }
+const stepFor = max => max <= 4 ? 0.25 : max <= 12 ? 0.5 : 1;
+const roundTo = (v, s) => r2(Math.round(v / s) * s);
+
+function getRubric(mode = state.mode, banca = state.banca) {
+  if (mode === 'enem') {
+    const C = (id, n, short, desc, dim) => ({ id, name: 'Competência ' + n, short, desc, max: 200, step: 40, dim });
+    return { key: 'enem', title: 'ENEM', max: 1000, dec: 0, minLines: 8, ideal: [20, 30], minParas: 4, criteria: [
+      C('c1', 1, 'Norma-padrão', 'Demonstrar domínio da modalidade escrita formal da língua portuguesa.', 'norma'),
+      C('c2', 2, 'Tema, tipo textual e repertório', 'Compreender a proposta e aplicar conceitos das várias áreas de conhecimento para desenvolver o tema, nos limites estruturais do texto dissertativo-argumentativo em prosa.', 'c2'),
+      C('c3', 3, 'Argumentação', 'Selecionar, relacionar, organizar e interpretar informações, fatos, opiniões e argumentos em defesa de um ponto de vista.', 'argumentacao'),
+      C('c4', 4, 'Coesão', 'Demonstrar conhecimento dos mecanismos linguísticos necessários para a construção da argumentação.', 'coesao'),
+      C('c5', 5, 'Proposta de intervenção', 'Elaborar proposta de intervenção para o problema abordado, respeitando os direitos humanos.', 'intervencao')
+    ] };
+  }
+  if (mode === 'ssa') {
+    const C = (id, L, short, desc, dim, min) => ({ id, name: 'Competência ' + L, short, desc, max: 2, step: 0.5, min, dim });
+    return { key: 'ssa', title: 'SSA · UPE', max: 10, dec: 1, minLines: 7, ideal: [20, 30], minParas: 3, minPass: 2, criteria: [
+      C('a', 'A', 'Proposta e eixos temáticos', 'Interpretação da proposta e fidelidade aos eixos temáticos indicados.', 'tema', 0.5),
+      C('b', 'B', 'Gênero dissertativo-argumentativo', 'Domínio das características do gênero dissertativo-argumentativo.', 'genero', 0.5),
+      C('c', 'C', 'Textos motivadores e autoria', 'Uso de informações dos textos motivadores e do conhecimento de mundo na explicitação de autoria.', 'autoria', 0),
+      C('d', 'D', 'Articulação das ideias', 'Articulação de ideias por mecanismos gramaticais e lexicais.', 'coesao', 0),
+      C('e', 'E', 'Norma-padrão', 'Domínio da norma-padrão do português brasileiro.', 'norma', 0)
+    ] };
+  }
+  if (mode !== 'concurso') return null;
+  const M = concMax(banca);
+  if (banca === 'cebraspe') {
+    const est = roundTo(M * 0.3, stepFor(M * 0.3)), dev = r2(M - est);
+    return { key: 'concurso:cebraspe', title: 'Cebraspe', max: M, dec: 2, formula: 'cebraspe', mult: cbMult(), minLines: 0, ideal: null, minParas: 3, criteria: [
+      { id: 'est', name: 'Apresentação e estrutura textual', group: 'Nota de conteúdo (NC)', desc: 'Legibilidade, indicação de parágrafos e organização em introdução, desenvolvimento e conclusão.', max: est, step: stepFor(est), dim: 'estrutura' },
+      { id: 'dev', name: 'Desenvolvimento do tema', group: 'Nota de conteúdo (NC)', desc: 'Abordagem de todos os aspectos exigidos na proposta, com argumentação consistente e domínio do conteúdo.', max: dev, step: stepFor(dev), dim: 'desenvolvimento' }
+    ] };
+  }
+  if (banca === 'fgv') {
+    const k = M / 30;
+    return { key: 'concurso:fgv', title: 'FGV', max: M, dec: 2, minLines: 0, ideal: null, minParas: 3, criteria: [
+      { id: 'tema', name: 'Abordagem do tema', group: 'Parte 1 · Estrutura textual global', desc: 'Seleção de argumentos convenientes e dos aspectos mais importantes, dentro do perfil esperado.', max: r2(9 * k), step: stepFor(9 * k), dim: 'desenvolvimento' },
+      { id: 'prog', name: 'Progressão textual', group: 'Parte 1 · Estrutura textual global', desc: 'Coesão e coerência entre os parágrafos, distribuição do tema e evolução adequada das partes.', max: r2(9 * k), step: stepFor(9 * k), dim: 'coesao' },
+      { id: 'voc', name: 'Seleção vocabular', group: 'Parte 2 · Correção gramatical', desc: 'Inadequação vocabular, parônimos, palavras gerais no lugar de específicas, variação inadequada e marcas de oralidade.', max: r2(8 * k), type: 'deduct', per: r2(0.5 * k), count: 'vocab' },
+      { id: 'norma', name: 'Norma culta', group: 'Parte 2 · Correção gramatical', desc: 'Desvios de ortografia, acentuação, concordância, regência, pontuação e construção frasal.', max: r2(4 * k), type: 'deduct', per: r2(0.2 * k), count: 'norma' }
+    ] };
+  }
+  if (banca === 'fcc') {
+    const k = M / 100;
+    return { key: 'concurso:fcc', title: 'FCC', max: M, dec: 2, minLines: 0, ideal: null, minParas: 3, criteria: [
+      { id: 'cont', name: 'Conteúdo', desc: 'Perspectiva adotada no tratamento do tema, capacidade de análise e senso crítico, consistência e pertinência dos argumentos.', max: r2(40 * k), step: stepFor(40 * k), dim: 'desenvolvimento' },
+      { id: 'estr', name: 'Estrutura', desc: 'Respeito ao gênero dissertativo-argumentativo, progressão textual e articulação entre frases e parágrafos.', max: r2(30 * k), step: stepFor(30 * k), dim: 'estrutura' },
+      { id: 'expr', name: 'Expressão', desc: 'Domínio da norma-padrão: ortografia, morfossintaxe, pontuação, propriedade vocabular e adequação do registro.', max: r2(30 * k), step: stepFor(30 * k), dim: 'norma' }
+    ] };
+  }
+  const k = M / 40;  // Vunesp
+  return { key: 'concurso:vunesp', title: 'Vunesp', max: M, dec: 2, minLines: 8, ideal: null, minParas: 3, criteria: [
+    { id: 'tema', name: 'Tema', desc: 'Atendimento ao tema proposto. A fuga completa ao tema zera a redação.', max: r2(10 * k), step: stepFor(10 * k), dim: 'tema' },
+    { id: 'estr', name: 'Estrutura', desc: 'Gênero/tipo de texto e coerência: tese clara, introdução, desenvolvimento e conclusão, argumentos pertinentes.', max: r2(10 * k), step: stepFor(10 * k), dim: 'genero' },
+    { id: 'ling', name: 'Língua', desc: 'Modalidade e registro: ortografia, acentuação, pontuação, concordância, regência e precisão vocabular.', max: r2(10 * k), step: stepFor(10 * k), dim: 'norma', cap20: true },
+    { id: 'coes', name: 'Coesão', desc: 'Recursos coesivos (conectivos, retomadas, substituições) e articulação entre frases e parágrafos.', max: r2(10 * k), step: stepFor(10 * k), dim: 'coesao', cap20: true }
+  ] };
+}
+
+function levels(c) {
+  const st = c.type === 'deduct' ? c.per : c.step;
+  const lo = c.min || 0, out = [];
+  const n = Math.round((c.max - lo) / st + 1e-9);
+  for (let i = 0; i <= n; i++) out.push(r2(Math.min(c.max, lo + i * st)));
+  if (out[out.length - 1] < r2(c.max)) out.push(r2(c.max));
+  return [...new Set(out)];
+}
+const snap = (v, lv) => lv.reduce((b, x) => Math.abs(x - v) < Math.abs(b - v) ? x : b, lv[0]);
+const fmtR = (v, R) => R.dec === 0 ? fmtN(Math.round(v)) : v.toLocaleString('pt-BR', { minimumFractionDigits: r2(v) % 1 ? 1 : 0, maximumFractionDigits: 2 });
+const fmtPlain = v => String(r2(v)).replace('.', ',');
+
+/* ---------- Indicadores linguísticos ---------- */
+const CONNECTIVES = {
+  adicao: ['além disso', 'ademais', 'outrossim', 'bem como', 'não só', 'mas também', 'além de', 'somado a isso', 'acrescenta-se', 'também'],
+  oposicao: ['entretanto', 'contudo', 'todavia', 'no entanto', 'porém', 'embora', 'apesar de', 'ainda que', 'em contrapartida', 'por outro lado', 'não obstante', 'mesmo que', 'conquanto', 'ao passo que'],
+  causa: ['porque', 'pois', 'visto que', 'uma vez que', 'já que', 'dado que', 'haja vista', 'em virtude de', 'devido a', 'em razão de', 'posto que', 'tendo em vista'],
+  conclusao: ['portanto', 'logo', 'dessa forma', 'desse modo', 'dessa maneira', 'por conseguinte', 'consequentemente', 'em suma', 'em síntese', 'diante disso', 'diante do exposto', 'por isso', 'sendo assim', 'destarte', 'assim'],
+  sequencia: ['nesse sentido', 'nessa perspectiva', 'nesse contexto', 'sob essa ótica', 'nesse viés', 'em primeiro lugar', 'em segundo lugar', 'primeiramente', 'inicialmente', 'posteriormente', 'em seguida', 'por fim', 'finalmente', 'paralelamente a isso', 'à vista disso'],
+  exemplo: ['por exemplo', 'a exemplo de', 'isto é', 'ou seja', 'a saber', 'como se observa'],
+  finalidade: ['a fim de', 'para que', 'com o objetivo de', 'com o intuito de', 'com a finalidade de', 'visando']
+};
+const CONN_LIST = Object.entries(CONNECTIVES).flatMap(([cat, arr]) => arr.map(c => {
+  const src = c.replace(/ /g, '\\s+');
+  return { c, cat, g: W(src, 'giu'), t: W(src, 'iu') };
+}));
+
+const REPERT = [
+  { label: 'Citação de autoridade', re: new RegExp('(?<![\\p{L}])(?:[Ss]egundo|[Cc]onforme|[Cc]onsoante|[Dd]e acordo com)\\s+(?:[oa]s?\\s+)?(?:\\p{Ll}+\\s+)?\\p{Lu}\\p{Ll}+', 'u') },
+  { label: 'Pensador ou especialista', re: W('fil[óo]sof[oa]|soci[óo]log[oa]|pensador[a]?|historiador[a]?|psic[óo]log[oa]|antrop[óo]log[oa]|economista|jurista|escritor[a]?|poeta|poetisa|cientista|te[óo]ric[oa]') },
+  { label: 'Legislação', re: new RegExp('(?<![\\p{L}])(?:Constitui[çc][ãa]o(?: Federal)?|Carta Magna|Lei(?: n[º°.]?| Maria| Federal| de| Áurea)?|Estatuto d[aoe]|Declara[çc][ãa]o Universal|C[óo]digo (?:Penal|Civil|de)|ECA|LDB|BNCC|[Aa]rtigo \\d+)(?![\\p{L}])', 'u') },
+  { label: 'Instituição ou órgão oficial', re: W('IBGE|OMS|ONU|UNESCO|UNICEF|IPEA|OCDE|Datafolha|IBOPE|Fiocruz|Inep|PNAD|Banco Mundial|Anistia Internacional|FBSP|Atlas da Viol[êe]ncia', 'u') },
+  { label: 'Pesquisa ou estatística', re: W('pesquisas?|levantamentos?|relat[óo]rios?|censo|estat[íi]sticas?|[íi]ndices?') },
+  { label: 'Dado numérico', re: /\d+(?:[.,]\d+)?\s?%|\d+(?:[.,]\d+)?\s(?:mil|milh(?:ão|ões)|bilh(?:ão|ões))/u },
+  { label: 'Citação direta', re: /["“«][^"”»\n]{10,}["”»]/u },
+  { label: 'Obra cultural', re: W('filme|livro|obra|s[ée]rie|document[áa]rio|romance|novela|m[úu]sica|can[çc][ãa]o|poema|pintura') },
+  { label: 'Contexto histórico', re: W('s[ée]culo|revolu[çc][ãa]o|guerra|idade m[ée]dia|iluminismo|per[íi]odo colonial|escravid[ãa]o|aboli[çc][ãa]o|era vargas|ditadura|redemocratiza[çc][ãa]o|antiguidade') },
+  { label: 'Data ou ano', re: /(?<!\d)(?:1[5-9]\d{2}|20[0-3]\d)(?!\d)/u }
+];
+
+const INTERV = {
+  agente: W('governo(?: federal| estadual)?|estado|poder p[úu]blico|minist[ée]rios?|secretarias?|prefeituras?|munic[íi]pios?|escolas?|institui[çc][õo]es(?: de ensino)?|m[íi]dia|imprensa|ongs?|organiza[çc][õo]es|sociedade(?: civil)?|fam[íi]lias?|empresas?|congresso(?: nacional)?|legislativo|judici[áa]rio|universidades?|c[âa]mara|senado|cidad[ãa]os|ind[úu]stria|meios de comunica[çc][ãa]o|influenciadores'),
+  acao: W('devem?|deveriam?|cabe(?:r[áa])?|compete|precisam?|urge|[ée] (?:necess[áa]rio|fundamental|imprescind[íi]vel|preciso|urgente|essencial|primordial)|faz-se (?:necess[áa]ri[oa]|mister)|promover|criar|implementar|implantar|investir|ampliar|fiscalizar|desenvolver|realizar|garantir|fomentar|elaborar|incentivar|estimular|combater|propor|crie|criem|promova|promovam|invista|invistam|amplie|ampliem|realize|realizem|desenvolva|desenvolvam|implemente|implementem'),
+  meio: W('por meio d[eoa]s?|mediante|atrav[ée]s d[eoa]s?|por interm[ée]dio d[eoa]s?|com o aux[íi]lio d[eoa]s?|com o apoio d[eoa]s?|a partir d[eoa]s?|com o uso d[eoa]s?|via'),
+  finalidade: W('a fim de|para que|com o (?:objetivo|intuito|prop[óo]sito) de|com a finalidade de|visando|objetivando|de modo a|de forma a|de maneira a|para (?:garantir|assegurar|promover|reduzir|combater|mitigar|minimizar|evitar|diminuir|ampliar|conscientizar|erradicar|solucionar|resolver|que)'),
+  detalhamento: W('ou seja|isto [ée]|por exemplo|a exemplo d[eoa]s?|tais como|o qual|a qual|os quais|as quais|que (?:vise|visem|possa|possam|aborde|abordem|ensine|ensinem|mostre|mostrem|alerte|alertem|consiste|consistam|contemple|contemplem|informe|informem|oriente|orientem|discuta|discutam)')
+};
+const IV_LABELS = { agente: 'Agente', acao: 'Ação', meio: 'Meio/modo', finalidade: 'Finalidade', detalhamento: 'Detalhamento' };
+const CONCL_START = W('portanto|logo|assim|dessa forma|desse modo|dessa maneira|em suma|em s[íi]ntese|diante (?:disso|do exposto)|por conseguinte|conclui-se|infere-se|sendo assim|destarte|em vista disso|à vista disso|por fim|finalmente|depreende-se|evidencia-se');
+const CAUSE_RE = W('porque|pois|visto que|uma vez que|j[áa] que|dado que|haja vista|em virtude d[eoa]s?|devido [àa]s?|em raz[ãa]o d[eoa]s?|posto que|tendo em vista|consequentemente|por conseguinte|por isso|em decorr[êe]ncia d[eoa]s?');
+const EXAMPLE_RE = W('por exemplo|a exemplo d[eoa]s?|como exemplo|exemplifica|exemplo disso|como ocorre|isto [ée]|ou seja');
+const FP_RE = W('eu|meu|minha|meus|minhas|comigo|acho|acredito|penso', 'giu');
+const INFORMAL_RE = W('né|pra|pro|tá|vc|você|vocês|a gente|tipo assim|daí', 'giu');
+const STOP = new Set(('a o e é de da do das dos em no na nos nas um uma uns umas para por com sem que se ao aos à às como mais mas ou sua seu suas seus isso essa esse esta este '
+  + 'entre sobre também não sim ser são foi pelo pela pelos pelas já muito muita muitos muitas quando onde qual quais seja sendo ter tem têm há '
+  + 'ainda assim porque todos todas outro outra outros outras desse dessa deste desta nesse nessa neste nesta forma modo maneira cada mesmo mesma '
+  + 'podem pode deve devem sobre após antes depois parte meio ainda apenas visto aquele aquela aqueles aquelas disso nisso dessa forma brasil brasileira brasileiro').split(' ').map(normWord));
+
+function estLines(text) {
+  return text.split(/\n/).filter(p => p.trim()).reduce((s, p) => s + Math.max(1, Math.ceil(p.trim().length / CHARS_PER_LINE)), 0);
+}
+
+let anaCache = { key: null, val: null };
+function analyzeEssay(text, tema) {
+  const key = text + '\u0000' + tema;
+  if (anaCache.key === key) return anaCache.val;
+
+  const all = text.split(/\n+/).map(p => p.trim()).filter(p => countWords(p) > 0);
+  let title = '', body = all;
+  if (all.length > 1 && countWords(all[0]) <= 12 && !/[.!?…:;,]$/.test(all[0])) { title = all[0]; body = all.slice(1); }
+  const bodyText = body.join('\n');
+  const words = countWords(bodyText);
+  const nP = body.length;
+  const lines = estLines(text);
+  const q = {}, notes = {};
+
+  /* conectivos */
+  const found = new Map(), byCat = {};
+  for (const k of CONN_LIST) {
+    const n = (bodyText.match(k.g) || []).length;
+    if (n) { found.set(k.c, n); byCat[k.cat] = (byCat[k.cat] || 0) + n; }
+  }
+  const distinct = found.size;
+  const sortedConn = [...found.entries()].sort((a, b) => b[1] - a[1]);
+  const maxRep = sortedConn.length ? sortedConn[0][1] : 0;
+  let inter = 0;
+  body.forEach((p, i) => {
+    if (!i) return;
+    const head = p.slice(0, 90);
+    if (CONN_LIST.some(k => { const m = k.t.exec(head); return m && m.index <= 45; })) inter++;
+  });
+
+  /* repertório */
+  const rep = [];
+  for (const r of REPERT) { const m = bodyText.match(r.re); if (m) rep.push({ label: r.label, ex: m[0].trim().slice(0, 48) }); }
+
+  /* aderência ao tema */
+  let overlap = null, introOverlap = null, missing = [], temaKw = [];
+  if (tema && tema.trim()) {
+    temaKw = [...new Set((tema.match(WORD_RE) || []).map(normWord).filter(w => w.length >= 4 && !STOP.has(w)))];
+    if (temaKw.length) {
+      const stems = t => new Set((t.match(WORD_RE) || []).map(w => normWord(w).slice(0, 5)));
+      const tw = stems(bodyText), iw = stems(body[0] || '');
+      const hit = temaKw.filter(w => tw.has(w.slice(0, 5)));
+      overlap = hit.length / temaKw.length;
+      introOverlap = temaKw.filter(w => iw.has(w.slice(0, 5))).length / temaKw.length;
+      missing = temaKw.filter(w => !tw.has(w.slice(0, 5)));
+    }
+  }
+
+  /* marcas de pessoalidade e informalidade */
+  const fp = (bodyText.match(FP_RE) || []).length;
+  const informal = [...new Set((bodyText.match(INFORMAL_RE) || []).map(s => s.toLowerCase()))];
+
+  /* proposta de intervenção (último parágrafo) */
+  const concl = nP >= 2 ? body[nP - 1] : bodyText.slice(Math.floor(bodyText.length * 0.65));
+  const iv = {};
+  for (const [k, re] of Object.entries(INTERV)) iv[k] = re.test(concl);
+  const ivN = Object.values(iv).filter(Boolean).length;
+
+  /* desenvolvimento */
+  const dev = nP >= 3 ? body.slice(1, -1) : [];
+  const argued = dev.filter(p => countWords(p) >= 45 && (CAUSE_RE.test(p) || EXAMPLE_RE.test(p) || REPERT.some(r => r.re.test(p)))).length;
+  const sentences = bodyText.split(/(?<=[.!?…])\s+|\n+/).filter(s => countWords(s) > 0);
+  const longS = sentences.filter(s => countWords(s) > 45).length;
+  const hasThesis = nP >= 1 && countWords(body[0]) >= 25 && (introOverlap == null || introOverlap >= 0.3);
+  const hasConclusion = nP >= 3 && (CONCL_START.test(body[nP - 1].slice(0, 90)) || ivN >= 2);
+
+  /* repetição de palavras de conteúdo */
+  const freq = new Map();
+  const temaSet = new Set(temaKw.map(w => w.slice(0, 5)));
+  for (const w of bodyText.match(WORD_RE) || []) {
+    const n = normWord(w);
+    if (n.length < 5 || STOP.has(n) || temaSet.has(n.slice(0, 5))) continue;
+    freq.set(n, (freq.get(n) || 0) + 1);
+  }
+  const topWord = [...freq.entries()].sort((a, b) => b[1] - a[1])[0];
+
+  /* ---- notas por dimensão (0 a 1) ---- */
+  q.tema = overlap == null ? (words >= 120 ? 0.75 : 0.5)
+    : overlap >= 0.7 ? 1 : overlap >= 0.5 ? 0.75 : overlap >= 0.3 ? 0.5 : overlap >= 0.15 ? 0.25 : 0;
+  notes.tema = [];
+  if (overlap == null) notes.tema.push('Informe o tema da proposta para medir a aderência temática.');
+  else {
+    notes.tema.push(`Palavras-chave do tema presentes no texto: ${temaKw.length - missing.length} de ${temaKw.length} (${Math.round(overlap * 100)}%).`);
+    if (missing.length) notes.tema.push(`Não aparecem: ${missing.slice(0, 6).join(', ')}. Verifique se todos os eixos do recorte temático foram abordados.`);
+    if (introOverlap != null && introOverlap < 0.3) notes.tema.push('A introdução retoma pouco o tema — apresente o recorte temático e a tese logo no início.');
+  }
+
+  let g = nP >= 3 ? 0.75 : nP === 2 ? 0.5 : 0.25;
+  if (nP >= 3 && hasThesis && hasConclusion) g += 0.25;
+  if (fp >= 3) g -= 0.25;
+  if (words < 100) g = Math.min(g, 0.25);
+  q.genero = clamp(g);
+  notes.genero = [`${plural(nP, 'parágrafo', 'parágrafos')}${title ? ' + título' : ''} · ${plural(words, 'palavra', 'palavras')} · ≈ ${lines} linhas.`];
+  if (nP < 3) notes.genero.push('Organize em introdução, desenvolvimento e conclusão (mínimo de 3 parágrafos; o ideal são 4).');
+  if (nP >= 3 && !hasThesis) notes.genero.push('Introdução curta ou sem relação clara com o tema: explicite a tese.');
+  if (nP >= 3 && !hasConclusion) notes.genero.push('A conclusão não está marcada: use um conectivo conclusivo e retome a tese.');
+  if (fp) notes.genero.push(`Marcas de 1ª pessoa do singular (${fp}×) — prefira a impessoalidade.`);
+  if (informal.length) notes.genero.push(`Marcas de informalidade: ${informal.slice(0, 5).join(', ')}.`);
+
+  q.repertorio = words < 80 ? 0 : rep.length >= 3 ? 1 : rep.length === 2 ? 0.75 : rep.length === 1 ? 0.5 : 0.25;
+  notes.repertorio = rep.length
+    ? ['Repertório identificado: ' + rep.slice(0, 5).map(r => `${r.label.toLowerCase()} (“${r.ex}”)`).join('; ') + '.', 'Confira se o repertório é legítimo, pertinente ao tema e bem articulado à argumentação.']
+    : ['Nenhum repertório sociocultural identificado (citações, dados, leis, obras, fatos históricos).'];
+
+  let a = 0.2;
+  if (dev.length >= 2) a += 0.3; else if (dev.length === 1) a += 0.15;
+  a += Math.min(2, argued) * 0.15;
+  if ((byCat.causa || 0) + (byCat.conclusao || 0) >= 3) a += 0.1;
+  if (rep.length >= 2) a += 0.1;
+  if (words < 150) a = Math.min(a, 0.4);
+  q.argumentacao = roundTo(clamp(a), 0.2);
+  notes.argumentacao = [`${plural(dev.length, 'parágrafo', 'parágrafos')} de desenvolvimento; ${argued} com argumentação fundamentada (relação de causa, exemplo ou repertório).`];
+  if (dev.length && argued < dev.length) notes.argumentacao.push('Desenvolva cada argumento: apresente a ideia, explique-a e comprove com dados, exemplos ou repertório.');
+  if (longS) notes.argumentacao.push(`${plural(longS, 'período muito longo', 'períodos muito longos')} (+45 palavras) — divida para ganhar clareza.`);
+
+  let c = 0.2;
+  if (distinct >= 3) c = 0.4;
+  if (distinct >= 5) c = 0.6;
+  if (distinct >= 7 && inter >= Math.min(2, nP - 1)) c = 0.8;
+  if (distinct >= 9 && nP >= 3 && inter >= nP - 1 && maxRep <= 3) c = 1;
+  if (nP <= 1) c = Math.min(c, 0.4);
+  if (maxRep >= 5) c = Math.max(0.2, c - 0.2);
+  if (words < 60) c = Math.min(c, 0.2);
+  q.coesao = c;
+  notes.coesao = [distinct ? `${plural(distinct, 'conectivo diferente', 'conectivos diferentes')}: ${sortedConn.slice(0, 8).map(([k, n]) => n > 1 ? `${k} (${n}×)` : k).join(', ')}.` : 'Nenhum conectivo identificado.'];
+  if (nP > 1) notes.coesao.push(`${inter} de ${nP - 1} parágrafos iniciam com elemento coesivo (articulação entre parágrafos).`);
+  if (maxRep >= 4) notes.coesao.push(`“${sortedConn[0][0]}” aparece ${maxRep}× — varie os conectivos.`);
+  if (topWord && topWord[1] >= 5) notes.coesao.push(`A palavra “${topWord[0]}” se repete ${topWord[1]}× — use sinônimos, pronomes e retomadas.`);
+
+  q.intervencao = ivN / 5;
+  notes.intervencao = ['Elementos na conclusão: ' + Object.keys(IV_LABELS).map(k => `${IV_LABELS[k]} ${iv[k] ? '✓' : '✗'}`).join(' · ') + '.'];
+  if (ivN < 5) notes.intervencao.push('Uma proposta completa traz: quem fará (agente), o que fará (ação), como (meio/modo), para quê (finalidade) e um detalhamento de algum desses elementos.');
+  notes.intervencao.push('Confira manualmente se a proposta respeita os direitos humanos.');
+
+  let c2v;
+  if (overlap != null && overlap < 0.15) c2v = 0.2;
+  else {
+    c2v = nP >= 4 && words >= 200 ? 0.6 : nP >= 3 && words >= 120 ? 0.4 : 0.2;
+    if (rep.length >= 1) c2v += 0.2;
+    if (rep.length >= 2 && (overlap == null || overlap >= 0.5) && c2v >= 0.6) c2v += 0.2;
+  }
+  q.c2 = Math.min(1, c2v);
+  q.autoria = (q.repertorio + q.argumentacao) / 2;
+  q.estrutura = (q.genero + q.coesao) / 2;
+  q.desenvolvimento = (q.tema + q.argumentacao + q.repertorio) / 3;
+
+  const val = { q, notes, words, paras: nP, title, lines, longS, rep, iv, ivN, distinct, inter, overlap };
+  anaCache = { key, val };
+  return val;
+}
+const DIM_NOTES = {
+  c2: ['tema', 'repertorio', 'genero'], autoria: ['repertorio', 'argumentacao'],
+  estrutura: ['genero', 'coesao'], desenvolvimento: ['tema', 'argumentacao', 'repertorio']
+};
+
+/* Desvios que contam na nota: pendentes + já corrigidos (ignorados não contam) */
+function gradingErrors() {
+  const cats = activeMatches().map(m => m.cat).concat(state.fixedCats);
+  const by = {};
+  for (const c of cats) by[c] = (by[c] || 0) + 1;
+  const norma = (by.ortografia || 0) + (by.gramatica || 0) + (by.pontuacao || 0) + (by.outros || 0);
+  return { by, norma, vocab: by.estilo || 0 };
+}
+function normaQ(E, words) {
+  if (words < 50) return 0.2;
+  const e = E * 300 / Math.max(words, 150);    // normalizado para uma redação de ~300 palavras
+  return e <= 2 ? 1 : e <= 5 ? 0.8 : e <= 9 ? 0.6 : e <= 14 ? 0.4 : 0.2;
+}
+function normaNotes(G, A) {
+  const by = G.by, n = [];
+  n.push(`${plural(G.norma, 'desvio apontado', 'desvios apontados')}: ortografia ${by.ortografia || 0} · gramática ${by.gramatica || 0} · pontuação ${by.pontuacao || 0}${by.outros ? ' · outros ' + by.outros : ''}.`);
+  if (A.words) n.push(`≈ ${fmt1(G.norma * 100 / A.words)} desvio(s) a cada 100 palavras.`);
+  if (state.fixedCats.length) n.push(`Inclui ${plural(state.fixedCats.length, 'desvio já corrigido', 'desvios já corrigidos')} no texto; sugestões ignoradas não contam.`);
+  if (A.longS) n.push(`${plural(A.longS, 'período muito longo', 'períodos muito longos')} — risco de falhas de estrutura sintática.`);
+  return n;
+}
+
+function evaluate() {
+  const R = getRubric();
+  if (!R) return null;
+  const A = analyzeEssay(state.text, state.tema);
+  const G = gradingErrors();
+  const q = { ...A.q, norma: normaQ(G.norma, A.words) };
+  const lines = state.linesUser || A.lines;
+  const ov = state.overrides[R.key] || {};
+  const ai = state.ai && state.ai.key === R.key ? state.ai : null;
+  const items = R.criteria.map(c => {
+    const lv = levels(c);
+    let auto, notes;
+    if (c.type === 'deduct') {
+      const n = G[c.count];
+      auto = Math.max(0, c.max - c.per * n);
+      notes = [`${plural(n, c.count === 'vocab' ? 'ocorrência de estilo/vocabulário' : 'desvio de norma', c.count === 'vocab' ? 'ocorrências de estilo/vocabulário' : 'desvios de norma')} × ${fmtPlain(c.per)} = −${fmtPlain(Math.min(c.max, c.per * n))} ponto(s).`];
+      if (c.count === 'norma') notes = notes.concat(normaNotes(G, A).slice(0, 1));
+      else notes.push('Repetições, coloquialismos e redundâncias apontados na aba Sugestões (ative a revisão rigorosa para detectar mais).');
+    } else {
+      let qq = q[c.dim] ?? 0.5;
+      if (c.cap20 && lines <= 20) qq = Math.min(qq, 0.8);
+      auto = c.max * qq;
+      notes = c.dim === 'norma' ? normaNotes(G, A) : (DIM_NOTES[c.dim] ? DIM_NOTES[c.dim].flatMap(d => A.notes[d] || []) : (A.notes[c.dim] || []));
+      if (c.cap20 && lines <= 20) notes = notes.concat('Com 20 linhas ou menos, este critério não alcança a nota máxima.');
+    }
+    auto = snap(auto, lv);
+    let val = auto, src = 'auto';
+    const aiVal = ai && ai.scores[c.id] != null ? snap(ai.scores[c.id], lv) : null;
+    if (aiVal != null) { val = aiVal; src = 'ai'; }
+    if (ov[c.id] != null) { val = snap(ov[c.id], lv); src = 'man'; }
+    return { c, lv, auto, aiVal, val, src, notes, aiNote: ai ? ai.comments[c.id] : '' };
+  });
+  const sum = r2(items.reduce((s, i) => s + i.val, 0));
+  let total = sum, extra = null;
+  if (R.formula === 'cebraspe') {
+    const NE = G.norma, TL = Math.max(1, lines);
+    total = Math.max(0, sum - R.mult * NE / TL);
+    extra = { NC: sum, NE, TL, mult: R.mult };
+  }
+  let zero = null;
+  if (state.zero) zero = 'Redação anulada pelo corretor.';
+  else if (R.minLines && lines < R.minLines) zero = `Texto com ${lines} linha(s): abaixo do mínimo de ${R.minLines} linhas.`;
+  if (zero) total = 0;
+  total = r2(total);
+  const warns = [];
+  if (R.ideal && (lines < R.ideal[0] || lines > R.ideal[1])) warns.push(`Extensão esperada: ${R.ideal[0]} a ${R.ideal[1]} linhas (atual ≈ ${lines}${state.linesUser ? ', informado' : ', estimado'}).`);
+  if (R.minParas && A.paras < R.minParas) warns.push(`Recomendado: no mínimo ${R.minParas} parágrafos (atual: ${A.paras}).`);
+  if (R.minPass && total < R.minPass) warns.push(`Abaixo da nota mínima de ${fmtR(R.minPass, R)} ponto(s) exigida no SSA 3.`);
+  return { R, A, G, items, sum, total, extra, zero, warns, lines, pct: R.max ? total / R.max : 0, ai };
+}
+
+/* ========= Métricas do texto ========= */
+function syllables(w) {
+  const g = w.toLowerCase().match(/[aeiouyáéíóúâêôãõàüï]+/g);
+  return Math.max(1, g ? g.length : 1);
+}
+function textMetrics(t) {
+  const words = t.match(WORD_RE) || [];
+  const sentences = t.split(/(?<=[.!?…])\s+|\n+/).map(s => s.trim()).filter(s => countWords(s) > 0);
+  const paragraphs = t.split(/\n\s*\n|\n/).filter(p => p.trim()).length;
+  const nW = words.length, nS = Math.max(1, sentences.length);
+  const syl = words.reduce((s, w) => s + syllables(w), 0);
+  const asl = nW / nS, asw = nW ? syl / nW : 0;
+  // Índice Flesch (adaptação para o português de Martins et al., 1996)
+  const pt = el.lang.value.startsWith('pt');
+  const flesch = nW ? Math.max(0, Math.min(100, (pt ? 248.835 : 206.835) - 1.015 * asl - 84.6 * asw)) : 0;
+  const longS = sentences.filter(s => countWords(s) > 30).length;
+  const unique = new Set(words.map(w => w.toLowerCase())).size;
+  return { words: nW, sentences: sentences.length, paragraphs, asl, flesch, longS, lexical: nW ? unique / nW : 0, chars: t.length };
+}
+function fleschLabel(f) {
+  if (f >= 75) return 'Muito fácil';
+  if (f >= 50) return 'Fácil';
+  if (f >= 25) return 'Difícil';
+  return 'Muito difícil';
+}
+
+/* ========= Renderização ========= */
+function render() {
+  if (state.view === 'review') {
+    renderDoc();
+    renderKPIs();
+    renderSide();
+    updateCrumb();
+  }
+  el.btnUndo.disabled = !state.history.length;
+  const pend = activeMatches().length;
+  $('navBadge').textContent = pend;
+  $('navBadge').classList.toggle('hidden', !state.docId || !pend);
+  scheduleSave();
+}
+
+function renderDoc() {
+  const t = state.text;
+  const ms = visibleMatches();
+  let html = '', pos = 0;
+  for (const m of ms) {
+    if (m.offset < pos) continue;
+    html += esc(t.slice(pos, m.offset));
+    const frag = t.slice(m.offset, m.offset + m.length);
+    html += `<span class="err c-${m.cat}${m.id === state.activeId ? ' active' : ''}" data-id="${m.id}">${frag.trim() ? esc(frag) : '&nbsp;'.repeat(Math.max(1, frag.length))}</span>`;
+    pos = m.offset + m.length;
+  }
+  html += esc(t.slice(pos));
+  el.doc.innerHTML = html + '\n';
+}
+
+function renderKPIs() {
+  const c = tally();
+  $('cFound').textContent = fmtN(c.found);
+  $('cPending').textContent = fmtN(c.pending);
+  $('cFixed').textContent = fmtN(c.fixed);
+  $('cFixedPct').textContent = (c.found ? Math.round(c.fixed / c.found * 100) : 0) + '% do total';
+  $('cIgnored').textContent = fmtN(c.ignored);
+
+  const ring = $('ring'), delta = $('gradeDelta');
+  const words = countWords(state.text);
+  if (state.busy || !words) {
+    $('gradeVal').textContent = '–';
+    $('gradeOf').textContent = isEssay() ? 'de ' + fmtR(getRubric().max, getRubric()) : 'de 10';
+    ring.style.setProperty('--p', 0);
+    $('gradeLbl').textContent = state.busy ? 'Calculando a nota…' : 'Nota do texto';
+    $('gradeSub').textContent = state.busy ? 'Aguarde o fim da análise' : '';
+    delta.classList.add('hidden');
+    return;
+  }
+
+  if (isEssay()) {
+    const ev = evaluate();
+    const info = scoreInfo(ev.pct * 10);
+    $('gradeVal').textContent = fmtR(ev.total, ev.R);
+    $('gradeOf').textContent = 'de ' + fmtR(ev.R.max, ev.R);
+    ring.style.setProperty('--p', ev.pct * 100);
+    ring.style.setProperty('--gc', ev.zero ? 'var(--danger)' : info.color);
+    $('gradeLbl').innerHTML = `Nota ${esc(ev.R.title)} · <span style="color:${ev.zero ? 'var(--danger)' : info.color}">${ev.zero ? 'Anulada' : info.lbl}</span>`;
+    let sub = ev.zero ? ev.zero : (state.aiBusy ? 'Avaliando com Claude…' : ev.ai ? 'Avaliação do Claude' : 'Estimativa automática');
+    if (!ev.zero && ev.items.some(i => i.src === 'man')) sub += ' · com ajustes do corretor';
+    if (state.failedChunks) sub += ' · análise parcial';
+    $('gradeSub').textContent = sub;
+    delta.classList.add('hidden');
+    return;
+  }
+
+  const sc = computeScore();
+  const info = scoreInfo(sc.value);
+  $('gradeVal').textContent = fmtScore(sc.value);
+  $('gradeOf').textContent = 'de 10';
+  ring.style.setProperty('--p', sc.value * 10);
+  ring.style.setProperty('--gc', info.color);
+  $('gradeLbl').innerHTML = `Nota do texto · <span style="color:${info.color}">${info.lbl}</span>`;
+  let sub = `${fmt1(sc.density)} erros a cada 100 palavras`;
+  if (state.failedChunks) sub += ` · análise parcial`;
+  $('gradeSub').textContent = sub;
+  if (state.firstScore != null && sc.value > state.firstScore) {
+    delta.innerHTML = `▲ +${fmtScore(sc.value - state.firstScore)} desde a nota original (${fmtScore(state.firstScore)})`;
+    delta.classList.remove('hidden');
+  } else delta.classList.add('hidden');
+}
+
+function cardHTML(m, compact) {
+  const t = state.text;
+  const a = Math.max(0, m.offset - 45), b = Math.min(t.length, m.offset + m.length + 45);
+  const ctx = (a > 0 ? '…' : '') + esc(t.slice(a, m.offset)) + '<mark>' + esc(t.slice(m.offset, m.offset + m.length)) + '</mark>' + esc(t.slice(m.offset + m.length, b)) + (b < t.length ? '…' : '');
+  const sugs = m.replacements.length
+    ? m.replacements.map((r, i) => `<button class="sug${r.trim() ? '' : ' empty'}" data-act="apply" data-id="${m.id}" data-i="${i}">${r.trim() ? esc(r) : (r === '' ? '(remover)' : '(espaço)')}</button>`).join('')
+    : '<span style="font-size:12.5px;color:var(--muted)">Sem sugestão automática. Edite manualmente.</span>';
+  return `<div class="sg${!compact && m.id === state.activeId ? ' active' : ''}" data-id="${m.id}" style="--cc:var(--c-${m.cat})">
+    <div class="head">${CATS[m.cat]}${m.short ? `<span class="sh">· ${esc(m.short)}</span>` : ''}</div>
+    <div class="msg">${esc(m.message)}</div>
+    <div class="ctx">${ctx.replace(/\n/g, ' ')}</div>
+    <div class="sugs">${sugs}</div>
+    <div class="links">
+      <button class="link" data-act="ignore" data-id="${m.id}">Ignorar</button>
+      <button class="link" data-act="ignoreRule" data-id="${m.id}">Ignorar regra</button>
+      ${m.cat === 'ortografia' ? `<button class="link" data-act="addDict" data-id="${m.id}">Adicionar ao dicionário</button>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderSide() {
+  const all = activeMatches();
+  const counts = {};
+  for (const m of all) counts[m.cat] = (counts[m.cat] || 0) + 1;
+  $('sugCount').textContent = all.length;
+  $('tabOrig').classList.toggle('hidden', !state.images.length);
+
+  let tabs = `<button class="chip${state.filter === 'all' ? ' on' : ''}" data-f="all">Todas <span class="n">${all.length}</span></button>`;
+  for (const k of Object.keys(CATS)) {
+    if (!counts[k]) continue;
+    tabs += `<button class="chip${state.filter === k ? ' on' : ''}" data-f="${k}"><span class="dot" style="background:var(--c-${k})"></span>${CATS[k]} <span class="n">${counts[k]}</span></button>`;
+  }
+  el.tabs.innerHTML = tabs;
+  if (state.filter !== 'all' && !counts[state.filter]) { state.filter = 'all'; return render(); }
+
+  const vis = visibleMatches();
+  if (!vis.length) {
+    el.list.innerHTML = state.busy ? '' : `<div class="empty"><div class="ic" style="background:var(--ok-soft);color:var(--ok)"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div><strong>Tudo certo por aqui</strong>Nenhum problema pendente neste texto.</div>`;
+  } else {
+    el.list.innerHTML = vis.map(m => cardHTML(m)).join('');
+  }
+  $('btnApplyAll').disabled = !vis.some(m => m.replacements.length);
+  $('btnIgnoreAll').disabled = !vis.length;
+
+  if (state.sideTab === 'ana') renderAnalysis();
+  if (state.sideTab === 'ava') renderAvaliacao();
+  if (state.sideTab === 'orig') renderOrig();
+}
+
+function renderAnalysis() {
+  const all = activeMatches();
+  const counts = {};
+  for (const m of all) counts[m.cat] = (counts[m.cat] || 0) + 1;
+  const max = Math.max(1, ...Object.values(counts));
+  const bars = Object.keys(CATS).map(k => `
+    <div class="bar-row"><span>${CATS[k]}</span><div class="track"><i style="width:${(counts[k] || 0) / max * 100}%;background:var(--c-${k})"></i></div><b>${counts[k] || 0}</b></div>`).join('');
+
+  const mt = textMetrics(state.text);
+  const byRule = new Map();
+  for (const m of all) {
+    const key = m.ruleId || m.message;
+    const r = byRule.get(key) || { n: 0, desc: m.ruleDesc || m.short || m.message, cat: m.cat };
+    r.n++; byRule.set(key, r);
+  }
+  const top = [...byRule.values()].sort((a, b) => b.n - a.n).slice(0, 6);
+
+  el.ana.innerHTML = `
+    <section>
+      <h3>Erros pendentes por categoria</h3>
+      ${bars}
+    </section>
+    <section>
+      <h3>Legibilidade</h3>
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <b style="font-size:20px">${Math.round(mt.flesch)}<span class="muted" style="font-size:13px;font-weight:500"> / 100</span></b>
+        <span style="font-weight:600">${fleschLabel(mt.flesch)}</span>
+      </div>
+      <div class="read-meter"><i style="left:${mt.flesch}%"></i></div>
+      <div class="read-scale"><span>Muito difícil</span><span>Difícil</span><span>Fácil</span><span>Muito fácil</span></div>
+      <p class="muted" style="font-size:12px;margin:10px 0 0">Índice Flesch${el.lang.value.startsWith('pt') ? ' adaptado ao português' : ''}: considera o tamanho das frases e das palavras.</p>
+    </section>
+    <section>
+      <h3>Métricas do texto</h3>
+      <div class="metrics">
+        <div class="metric"><div class="v">${fmtN(mt.words)}</div><div class="l">Palavras</div></div>
+        <div class="metric"><div class="v">${fmtN(mt.sentences)}</div><div class="l">Frases</div></div>
+        <div class="metric"><div class="v">${fmtN(mt.paragraphs)}</div><div class="l">Parágrafos</div></div>
+        <div class="metric"><div class="v">≈ ${fmtN(estLines(state.text))}</div><div class="l">Linhas manuscritas</div></div>
+        <div class="metric"><div class="v">${fmt1(mt.asl)}</div><div class="l">Palavras por frase</div></div>
+        <div class="metric"><div class="v" style="${mt.longS ? 'color:var(--warn)' : ''}">${fmtN(mt.longS)}</div><div class="l">Frases longas (+30 palavras)</div></div>
+        <div class="metric"><div class="v">${Math.round(mt.lexical * 100)}%</div><div class="l">Variedade de vocabulário</div></div>
+        <div class="metric"><div class="v">~${Math.max(1, Math.round(mt.words / 200))} min</div><div class="l">Tempo de leitura</div></div>
+      </div>
+    </section>
+    <section>
+      <h3>Erros mais frequentes</h3>
+      ${top.length ? `<ul class="rules">${top.map(r => `<li><span class="dot" style="background:var(--c-${r.cat})"></span><span title="${esc(r.desc)}">${esc(r.desc)}</span><b>${r.n}×</b></li>`).join('')}</ul>` : '<p class="muted" style="margin:0;font-size:13px">Nenhum erro pendente.</p>'}
+    </section>`;
+}
+
+/* ---------- Painel de avaliação ---------- */
+const fracColor = f => f >= 0.8 ? 'var(--ok)' : f >= 0.6 ? 'var(--primary)' : f >= 0.4 ? 'var(--warn)' : 'var(--danger)';
+const SRC_LABEL = { auto: 'Automática', ai: 'Claude', man: 'Ajuste manual' };
+const AI_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/></svg>';
+
+function syncAvaHeader() {
+  const v = state.mode === 'concurso' ? 'concurso:' + state.banca : state.mode;
+  if (el.avaMode.value !== v) el.avaMode.value = v;
+  if (document.activeElement !== el.avaTema && el.avaTema.value !== state.tema) el.avaTema.value = state.tema;
+  if (document.activeElement !== el.avaLines) el.avaLines.value = state.linesUser || '';
+  el.avaLines.placeholder = state.text ? `≈ ${estLines(state.text)}` : 'Linhas';
+  el.avaTema.disabled = el.avaLines.disabled = !isEssay();
+}
+
+function renderAvaliacao() {
+  syncAvaHeader();
+  const body = el.avaBody;
+  if (!isEssay()) {
+    body.innerHTML = `<div class="empty"><div class="ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/></svg></div><strong>Escolha um modelo de redação</strong>Selecione ENEM, SSA ou uma banca de concurso acima para ver a nota por competência.</div>`;
+    return;
+  }
+  if (state.busy || !state.text.trim()) {
+    body.innerHTML = `<div class="empty"><div class="spinner"></div>Aguardando a análise do texto…</div>`;
+    return;
+  }
+  const ev = evaluate(), R = ev.R;
+  const info = scoreInfo(ev.pct * 10);
+  const col = ev.zero ? 'var(--danger)' : info.color;
+  const hasOv = Object.keys(state.overrides[R.key] || {}).length > 0;
+  const srcTxt = ev.ai ? 'Avaliação do Claude' : 'Estimativa automática';
+
+  let h = `<div class="total">
+    <div style="flex:1;min-width:0">
+      <div class="big" style="color:${col}">${fmtR(ev.total, R)} <span class="of">/ ${fmtR(R.max, R)}</span></div>
+      <div class="lbl">${esc(R.title)} · <b style="color:${col}">${ev.zero ? 'Anulada' : info.lbl}</b> · ${srcTxt}${hasOv ? ' + ajustes' : ''}</div>
+      <div class="bar"><i style="width:${ev.pct * 100}%;background:${col}"></i></div>
+    </div>
+  </div>`;
+  if (ev.zero) h += `<div class="zero-box"><b>Nota zero.</b> ${esc(ev.zero)}</div>`;
+  if (ev.ai && ev.ai.annul && !state.zero) h += `<div class="zero-box">O Claude sugere anular a redação${ev.ai.annulReason ? ': ' + esc(ev.ai.annulReason) : '.'} Confira e, se concordar, marque “Anular redação”.</div>`;
+  if (ev.warns.length) h += `<div class="warn-box"><ul>${ev.warns.map(w => `<li>${esc(w)}</li>`).join('')}</ul></div>`;
+
+  h += `<div class="ava-actions">
+    <button class="btn ai" data-ava="ai" ${state.aiBusy ? 'disabled' : ''}>${state.aiBusy ? '<span class="spinner"></span>Avaliando…' : AI_ICON + (ev.ai ? 'Reavaliar com Claude' : 'Avaliar com Claude')}</button>
+    <button class="btn" data-ava="reset" ${hasOv ? '' : 'disabled'} title="Descartar os ajustes manuais">Restaurar notas</button>
+  </div>
+  <label class="switch" style="margin:0 2px 12px"><input type="checkbox" data-ava="zero" ${state.zero ? 'checked' : ''}> Anular redação (fuga ao tema, cópia, identificação…)</label>`;
+
+  if (ev.ai && (ev.ai.general || ev.ai.strengths.length || ev.ai.improvements.length)) {
+    h += `<div class="ai-sum"><h4>Parecer do Claude</h4>${ev.ai.general ? `<p>${esc(ev.ai.general)}</p>` : ''}
+      ${ev.ai.strengths.length ? `<b style="font-size:12.5px">Pontos fortes</b><ul>${ev.ai.strengths.map(s => `<li>${esc(s)}</li>`).join('')}</ul>` : ''}
+      ${ev.ai.improvements.length ? `<b style="font-size:12.5px">Como melhorar</b><ul>${ev.ai.improvements.map(s => `<li>${esc(s)}</li>`).join('')}</ul>` : ''}</div>`;
+  }
+
+  let grp = null;
+  for (const it of ev.items) {
+    const c = it.c;
+    if (c.group && c.group !== grp) { grp = c.group; h += `<div class="grp">${esc(grp)}</div>`; }
+    const f = c.max ? it.val / c.max : 0, cc = fracColor(f);
+    const nm = c.short && c.name.startsWith('Competência') ? `${c.name} · ${c.short}` : c.name;
+    h += `<div class="crit">
+      <div class="ch"><div class="cn"><b>${esc(nm)}</b><small>${esc(c.desc)}</small></div>
+        <select data-crit="${c.id}" aria-label="Nota de ${esc(nm)}">${it.lv.map(v => `<option value="${v}"${v === it.val ? ' selected' : ''}>${fmtR(v, R)}</option>`).join('')}</select></div>
+      <div class="cbar"><i style="width:${f * 100}%;background:${cc}"></i></div>
+      <div class="cmeta"><span class="src-badge ${it.src}">${SRC_LABEL[it.src]}</span><span>máx. ${fmtR(c.max, R)}</span>${it.src !== 'auto' ? `<span>· automática: ${fmtR(it.auto, R)}</span>` : ''}${it.src === 'man' && it.aiVal != null ? `<span>· Claude: ${fmtR(it.aiVal, R)}</span>` : ''}</div>
+      ${it.notes.length ? `<ul>${it.notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : ''}
+      ${it.aiNote ? `<div class="aic"><b>Claude:</b> ${esc(it.aiNote)}</div>` : ''}
+    </div>`;
+  }
+
+  if (ev.extra) {
+    const x = ev.extra;
+    h += `<div class="grp">Nota final (fórmula do edital)</div>
+    <div class="formula">NR = NC − ${fmtPlain(x.mult)} × NE ÷ TL<br>NR = ${fmtPlain(x.NC)} − ${fmtPlain(x.mult)} × ${x.NE} ÷ ${x.TL} = <b>${fmtR(ev.zero ? 0 : Math.max(0, x.NC - x.mult * x.NE / x.TL), R)}</b></div>
+    <ul class="muted" style="font-size:12px;margin:0 0 8px;padding-left:17px"><li>NE: desvios gramaticais (pendentes e já corrigidos; ignorados não contam).</li><li>TL: linhas efetivamente escritas — ${state.linesUser ? 'informado pelo corretor' : 'estimado; informe o número real acima'}.</li></ul>`;
+  }
+
+  h += `<p class="disc">A estimativa automática usa indicadores do texto (aderência ao tema, estrutura, conectivos, repertório, proposta de intervenção e desvios apontados). ${ev.ai ? 'A avaliação do Claude é uma sugestão.' : ''} Ela não substitui a leitura do corretor: ajuste cada nota nos seletores. ${R.key.startsWith('concurso') ? 'Os critérios das bancas variam por edital — confira a grade do seu concurso.' : ''}</p>`;
+  body.innerHTML = h;
+}
+
+function renderOrig() {
+  $('orig').innerHTML = state.images.length
+    ? state.images.map((u, i) => `<figure><img src="${u}" alt="Página ${i + 1} da redação" data-full="${i}"><figcaption>Página ${i + 1} · toque para ampliar</figcaption></figure>`).join('')
+    : '<div class="empty">Nenhuma foto nesta correção.</div>';
+}
+
+function setSideTab(t) {
+  if (t === 'orig' && !state.images.length) t = 'sug';
+  state.sideTab = t;
+  document.querySelectorAll('#sideTabs button').forEach(b => b.classList.toggle('on', b.dataset.side === t));
+  $('sidSug').style.display = t === 'sug' ? 'flex' : 'none';
+  $('sidAva').style.display = t === 'ava' ? 'flex' : 'none';
+  $('sidAna').classList.toggle('hidden', t !== 'ana');
+  $('sidOrig').classList.toggle('hidden', t !== 'orig');
+  if (t === 'ana') renderAnalysis();
+  if (t === 'ava') renderAvaliacao();
+  if (t === 'orig') renderOrig();
+}
+
+/* ========= Inteligência artificial (opcional) ========= */
+function aiCfg() {
+  const c = { key: '', model: '', auto: true, ...store.get('ai', {}) };
+  if (c.provider && c.provider !== 'anthropic') c.key = '';   // versões antigas: outros provedores
+  c.provider = 'anthropic';
+  return c;
+}
+const aiModel = c => (c.model || AI_PROVIDERS.anthropic.model).trim();
+const aiReady = () => !!aiCfg().key;
+
+/* Escapa quebras de linha e tabulações cruas dentro de strings JSON */
+function looseJSON(t) {
+  let out = '', inStr = false, escp = false;
+  for (const ch of t) {
+    if (inStr) {
+      if (escp) { escp = false; out += ch; continue; }
+      if (ch === '\\') { escp = true; out += ch; continue; }
+      if (ch === '"') inStr = false;
+      out += ch === '\n' ? '\\n' : ch === '\t' ? '\\t' : ch === '\r' ? '' : ch;
+    } else { if (ch === '"') inStr = true; out += ch; }
+  }
+  return out;
+}
+function parseJSON(s) {
+  const t = String(s).replace(/```(?:json)?/gi, '');
+  const a = t.indexOf('{'), b = t.lastIndexOf('}');
+  if (a < 0 || b <= a) throw new Error('O Claude não retornou uma resposta no formato esperado. Tente novamente.');
+  const body = t.slice(a, b + 1);
+  try { return JSON.parse(body); } catch { return JSON.parse(looseJSON(body)); }
+}
+const splitDataURL = u => { const m = /^data:([^;]+);base64,(.*)$/.exec(u); return { mime: m[1], data: m[2] }; };
+
+async function aiCall({ system, prompt, images = [], maxTokens = 4000, cfg = null, onWait = null }) {
+  const c = cfg || aiCfg();
+  if (!c.key) throw new Error('Configure a chave do Claude em Configurações.');
+  const body = JSON.stringify({
+    model: aiModel(c), max_tokens: maxTokens, system,
+    messages: [{ role: 'user', content: [
+      ...images.map(u => { const d = splitDataURL(u); return { type: 'image', source: { type: 'base64', media_type: d.mime, data: d.data } }; }),
+      { type: 'text', text: prompt }
+    ] }]
+  });
+  for (let attempt = 0; ; attempt++) {
+    let res;
+    try {
+      res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-api-key': c.key, 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+        body
+      });
+    } catch {
+      if (attempt < 2) { await sleep(2000 * (attempt + 1)); continue; }
+      throw new Error('Não foi possível conectar ao Claude. Verifique sua internet.');
+    }
+    const raw = await res.text();
+    let data = null;
+    try { data = JSON.parse(raw); } catch { /* resposta não-JSON */ }
+    if ((res.status === 429 || res.status === 529 || res.status >= 500) && attempt < 3) {
+      const wait = Math.min(30, (+res.headers.get('retry-after') || 0) || 4 * (attempt + 1));
+      for (let t = wait; t > 0; t--) { if (onWait) onWait(`Claude ocupado (${res.status}). Nova tentativa em ${t}s…`); await sleep(1000); }
+      continue;
+    }
+    if (!res.ok) {
+      const msg = (data && data.error && (data.error.message || data.error.type)) || raw.slice(0, 160);
+      if (res.status === 401) throw new Error('Chave do Claude inválida. Revise em Configurações.');
+      if (res.status === 403) throw new Error('A chave do Claude não tem permissão para este uso. Revise em Configurações.');
+      if (res.status === 404 || /model/i.test(msg) && res.status === 400) throw new Error(`Modelo “${aiModel(c)}” não encontrado. Escolha outro em Configurações.`);
+      if (res.status === 400 && /credit|billing|balance/i.test(msg)) throw new Error('Sua conta da Anthropic está sem créditos. Verifique o faturamento no console.');
+      if (res.status === 413) throw new Error('As imagens ficaram grandes demais para o Claude. Envie menos páginas por vez.');
+      throw new Error(`Erro do Claude (${res.status}): ${msg}`);
+    }
+    const out = ((data && data.content) || []).map(b => b.text || '').join('');
+    if (!out.trim()) throw new Error('O Claude retornou uma resposta vazia. Tente novamente.');
+    if (data.stop_reason === 'max_tokens' && maxTokens < 16000) return aiCall({ system, prompt, images, maxTokens: 16000, cfg, onWait });
+    return out;
+  }
+}
+
+async function aiTranscribe(urls, onWait) {
+  const prompt = `${urls.length > 1 ? `As ${urls.length} imagens são páginas de uma mesma redação manuscrita, em ordem.` : 'A imagem é uma redação manuscrita.'}
+Transcreva o texto com fidelidade absoluta, seguindo estas regras:
+- NÃO corrija nada: mantenha exatamente a grafia, a acentuação, a pontuação, as maiúsculas e eventuais erros do autor (a transcrição será usada para corrigir a redação).
+- Ignore numeração de linhas, cabeçalhos e campos impressos do formulário, carimbos, rascunhos fora da área de texto e palavras riscadas.
+- Junte palavras divididas por hífen na quebra de linha (ex.: "educa-" + "ção" = "educação").
+- Separe cada parágrafo do autor com uma linha em branco; dentro do parágrafo, não quebre linhas.
+- Se houver título, coloque-o também no campo "titulo" e não o repita no texto.
+- Marque trechos impossíveis de ler com [ilegível].
+- Conte as linhas efetivamente escritas pelo autor na folha (incluindo a do título, se houver).
+Responda SOMENTE com um objeto JSON válido, sem texto antes ou depois:
+{"titulo":"","texto":"parágrafo 1\\n\\nparágrafo 2","linhas_escritas":0,"trechos_ilegiveis":0,"observacoes":"problemas de imagem ou de leitura, se houver"}`;
+  const out = await aiCall({
+    system: 'Você é um transcritor especializado em redações manuscritas em português do Brasil. Sua transcrição é literal e fiel ao original, sem correções.',
+    prompt, images: urls, maxTokens: 6000, onWait
+  });
+  try {
+    const j = parseJSON(out);
+    const body = String(j.texto || '').trim();
+    if (!body) throw new Error('vazio');
+    const title = String(j.titulo || '').trim();
+    const lines = parseInt(j.linhas_escritas, 10);
+    return { text: (title ? title + '\n\n' : '') + body, lines: lines > 0 && lines < 200 ? lines : null, illegible: +j.trechos_ilegiveis || 0, notes: String(j.observacoes || '').trim() };
+  } catch {
+    return { text: out, lines: null, illegible: 0, notes: '' };   // resposta em texto simples
+  }
+}
+
+function buildGradePrompt(ev, crit) {
+  const R = ev.R, G = ev.G, A = ev.A;
+  const list = crit.map(c => `- id "${c.id}" — ${c.name}${c.group ? ' [' + c.group + ']' : ''}: ${c.desc} Valores permitidos: ${levels(c).map(fmtPlain).join(' | ')}.`).join('\n');
+  const rules = {
+    enem: 'Regras do ENEM: nota zero em fuga total ao tema, não atendimento ao tipo dissertativo-argumentativo, texto com até 7 linhas, cópia dos textos motivadores, desrespeito aos direitos humanos, impropérios ou identificação. Na Competência 5, cada elemento válido (agente, ação, meio/modo, finalidade e detalhamento) vale 40 pontos.',
+    ssa: 'Regras do SSA/UPE: texto dissertativo-argumentativo com no mínimo 3 parágrafos e entre 20 e 30 linhas. Nota zero em fuga total ao tema ou ao gênero, menos de 7 linhas, cópia dos textos motivadores ou ofensas. Fuga parcial (tópicos da proposta não desenvolvidos) reduz a nota. Os níveis vão de Insuficiente a Excelente; as competências A e B têm nota mínima 0,5.',
+    concurso: `Redação de concurso público (banca ${R.title}): avalie com o rigor da banca, valorizando objetividade, impessoalidade, domínio do tema, progressão textual e adequação à norma-padrão.${R.formula === 'cebraspe' ? ` Avalie apenas a nota de conteúdo (NC); os erros gramaticais são descontados à parte pela fórmula NR = NC − ${fmtPlain(R.mult)} × NE ÷ TL.` : ''}`
+  }[R.key.split(':')[0]];
+  return `Corrija a redação abaixo segundo a grade: ${R.title} (nota máxima ${fmtPlain(R.max)}).
+Tema/proposta: ${state.tema.trim() || '(não informado — identifique o tema pelo próprio texto e avalie a coerência e o desenvolvimento)'}
+
+Critérios (use somente os valores permitidos):
+${list}
+
+${rules}
+
+Dados de apoio medidos automaticamente: ${A.words} palavras, ${A.paras} parágrafos, cerca de ${ev.lines} linhas manuscritas; o verificador gramatical apontou ${G.norma} possíveis desvios (ortografia ${G.by.ortografia || 0}, gramática ${G.by.gramatica || 0}, pontuação ${G.by.pontuacao || 0}). O texto pode ter vindo de transcrição de foto: desconsidere marcas como [ilegível] e falhas evidentes de transcrição.
+
+Responda SOMENTE com um objeto JSON válido, sem texto antes ou depois, neste formato:
+{"criterios":[{"id":"${crit[0].id}","nota":0,"comentario":"justificativa objetiva, citando trechos do texto"}],"comentario_geral":"parecer em 2 a 4 frases","pontos_fortes":["..."],"melhorias":["sugestão prática e específica"],"anular":false,"motivo_anulacao":""}
+Inclua todos os critérios (${crit.map(c => c.id).join(', ')}). Escreva em português do Brasil.
+
+REDAÇÃO:
+"""
+${state.text}
+"""`;
+}
+
+async function aiGrade() {
+  if (state.aiBusy || state.busy) return;
+  if (!aiReady()) { openSettings(); return toast('Informe a chave do Claude para avaliar com IA.'); }
+  const ev = evaluate();
+  if (!ev || !state.text.trim()) return;
+  const R = ev.R;
+  const crit = R.criteria.filter(c => c.type !== 'deduct');
+  const docId = state.docId;
+  state.aiBusy = true;
+  render();
+  try {
+    const out = await aiCall({
+      system: 'Você é um corretor de redações experiente, rigoroso e justo, treinado nas grades oficiais do ENEM, do SSA/UPE e das principais bancas de concursos públicos. Responda sempre com JSON válido.',
+      prompt: buildGradePrompt(ev, crit), maxTokens: 4000
+    });
+    if (docId !== state.docId) return;
+    const j = parseJSON(out);
+    const scores = {}, comments = {};
+    for (const it of j.criterios || []) {
+      const c = crit.find(x => x.id === String(it.id).toLowerCase().trim());
+      if (!c) continue;
+      const n = parseFloat(String(it.nota).replace(',', '.'));
+      if (!isNaN(n)) scores[c.id] = snap(n, levels(c));
+      if (it.comentario) comments[c.id] = String(it.comentario);
+    }
+    if (!Object.keys(scores).length) throw new Error('A IA não retornou notas no formato esperado. Tente novamente.');
+    const arr = v => Array.isArray(v) ? v.map(String).filter(Boolean).slice(0, 6) : [];
+    state.ai = {
+      key: R.key, scores, comments, general: String(j.comentario_geral || ''),
+      strengths: arr(j.pontos_fortes), improvements: arr(j.melhorias),
+      annul: j.anular === true, annulReason: String(j.motivo_anulacao || ''),
+      provider: aiCfg().provider, date: Date.now()
+    };
+    toast('Avaliação do Claude concluída');
+  } catch (e) {
+    toast(e.message);
+    console.error(e);
+  } finally {
+    state.aiBusy = false;
+    render();
+  }
+}
+
+/* ========= Fotos: captura, tratamento e transcrição ========= */
+function addPhotos(files) {
+  let added = 0, skipped = 0;
+  for (const f of files) {
+    if (!isImage(f)) { skipped++; continue; }
+    if (photos.length >= MAX_PHOTOS) { toast(`Limite de ${MAX_PHOTOS} fotos por redação.`); break; }
+    photos.push({ id: ++uid, file: f, url: URL.createObjectURL(f), rot: 0 });
+    added++;
+  }
+  if (skipped) toast('Alguns arquivos não são imagens e foram ignorados.');
+  if (added) { setSrc('foto'); renderThumbs(); }
+}
+function renderThumbs() {
+  const ic = {
+    left: '<path d="m15 18-6-6 6-6"/>', right: '<path d="m9 18 6-6-6-6"/>',
+    rot: '<path d="M21 12a9 9 0 1 1-2.6-6.4L21 8"/><path d="M21 3v5h-5"/>', del: '<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>'
+  };
+  const b = (act, id, t, cls = '') => `<button type="button" class="${cls}" data-ph="${act}" data-id="${id}" title="${t}" aria-label="${t}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ic[act]}</svg></button>`;
+  el.thumbs.innerHTML = photos.map((p, i) => `<div class="thumb">
+    <img src="${p.url}" alt="Página ${i + 1}" style="transform:rotate(${p.rot}deg)${p.rot % 180 ? ' scale(.75)' : ''}">
+    <span class="pg">${i + 1}</span>
+    <div class="ta">${i > 0 ? b('left', p.id, 'Mover para antes') : ''}${b('rot', p.id, 'Girar 90°')}${i < photos.length - 1 ? b('right', p.id, 'Mover para depois') : ''}${b('del', p.id, 'Remover', 'del')}</div>
+  </div>`).join('');
+  $('photoTips').classList.toggle('hidden', photos.length > 0);
+  updateGo();
+}
+el.thumbs.addEventListener('click', e => {
+  const btn = e.target.closest('[data-ph]');
+  if (!btn || ocrBusy) return;
+  const i = photos.findIndex(p => p.id === +btn.dataset.id);
+  if (i < 0) return;
+  const act = btn.dataset.ph;
+  if (act === 'rot') photos[i].rot = (photos[i].rot + 90) % 360;
+  if (act === 'left' && i > 0) [photos[i - 1], photos[i]] = [photos[i], photos[i - 1]];
+  if (act === 'right' && i < photos.length - 1) [photos[i + 1], photos[i]] = [photos[i], photos[i + 1]];
+  if (act === 'del') { URL.revokeObjectURL(photos[i].url); photos.splice(i, 1); }
+  renderThumbs();
+});
+
+async function decodeImage(file) {
+  if (window.createImageBitmap) {
+    try { return await createImageBitmap(file, { imageOrientation: 'from-image' }); } catch { /* tenta pelo <img> */ }
+  }
+  const url = URL.createObjectURL(file);
+  try {
+    const img = new Image();
+    img.src = url;
+    await img.decode();
+    return img;
+  } catch {
+    throw new Error(`Não foi possível abrir "${file.name}". Se for HEIC, converta para JPG ou use o botão "Tirar foto".`);
+  } finally {
+    setTimeout(() => URL.revokeObjectURL(url), 3000);
+  }
+}
+/* Tons de cinza + ajuste automático de contraste (o papel fica branco e a tinta, escura) */
+function enhanceCanvas(ctx, w, h) {
+  const im = ctx.getImageData(0, 0, w, h), d = im.data, hist = new Uint32Array(256);
+  for (let i = 0; i < d.length; i += 4) { const y = (d[i] * 299 + d[i + 1] * 587 + d[i + 2] * 114) / 1000 | 0; d[i] = y; hist[y]++; }
+  const total = w * h;
+  let lo = 0, hi = 255, acc = 0;
+  for (let i = 0; i < 256; i++) { acc += hist[i]; if (acc > total * 0.01) { lo = i; break; } }
+  acc = 0;
+  for (let i = 255; i >= 0; i--) { acc += hist[i]; if (acc > total * 0.25) { hi = i; break; } }
+  if (hi - lo < 40) hi = Math.min(255, lo + 40);
+  const k = 255 / (hi - lo);
+  for (let i = 0; i < d.length; i += 4) { let v = (d[i] - lo) * k; v = v < 0 ? 0 : v > 255 ? 255 : v; d[i] = d[i + 1] = d[i + 2] = v; }
+  ctx.putImageData(im, 0, 0);
+}
+async function prepCanvas(p, maxDim, enhance) {
+  const bmp = await decodeImage(p.file);
+  const s = Math.min(1, maxDim / Math.max(bmp.width, bmp.height));
+  const w = Math.round(bmp.width * s), h = Math.round(bmp.height * s);
+  const rot = ((p.rot % 360) + 360) % 360, swap = rot === 90 || rot === 270;
+  const cv = document.createElement('canvas');
+  cv.width = swap ? h : w; cv.height = swap ? w : h;
+  const ctx = cv.getContext('2d', { willReadFrequently: !!enhance });
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.translate(cv.width / 2, cv.height / 2);
+  ctx.rotate(rot * Math.PI / 180);
+  ctx.drawImage(bmp, -w / 2, -h / 2, w, h);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  if (bmp.close) bmp.close();
+  if (enhance) enhanceCanvas(ctx, cv.width, cv.height);
+  return cv;
+}
+function downscaleURL(cv, maxDim) {
+  const s = Math.min(1, maxDim / Math.max(cv.width, cv.height));
+  if (s >= 1) return cv.toDataURL('image/jpeg', 0.85);
+  const c2 = document.createElement('canvas');
+  c2.width = Math.round(cv.width * s); c2.height = Math.round(cv.height * s);
+  c2.getContext('2d').drawImage(cv, 0, 0, c2.width, c2.height);
+  return c2.toDataURL('image/jpeg', 0.85);
+}
+
+function setOcr(on, title, msg, frac) {
+  $('ocrRun').classList.toggle('hidden', !on);
+  if (!on) return;
+  $('ocrTitle').textContent = title || '';
+  $('ocrMsg').textContent = msg || '';
+  $('ocrBar').style.width = Math.round(clamp(frac || 0) * 100) + '%';
+}
+const OCR_LANG = { pt: 'por', en: 'eng', es: 'spa', fr: 'fra', de: 'deu', it: 'ita' };
+const OCR_STATUS = {
+  'loading tesseract core': 'Carregando o motor de OCR', 'initializing tesseract': 'Inicializando',
+  'loading language traineddata': 'Baixando o idioma (só na primeira vez)', 'initializing api': 'Preparando o reconhecimento',
+  'recognizing text': 'Lendo a imagem'
+};
+function joinLines(p) {
+  const lines = p.split('\n')
+    .map(l => l.replace(/^\s*\d{1,2}\s*[|.)\]-]?\s+/, '').replace(/\s+\d{1,2}\s*$/, '').trim())
+    .filter(Boolean);
+  let s = '';
+  for (const l of lines) {
+    if (/[-‐]$/.test(s) && /^\p{Ll}/u.test(l)) s = s.slice(0, -1) + l;
+    else s += (s ? ' ' : '') + l;
+  }
+  return s.replace(/\s{2,}/g, ' ').trim();
+}
+function tessToText(data) {
+  let paras = [];
+  if (data.blocks && data.blocks.length) paras = data.blocks.flatMap(b => (b.paragraphs || []).map(p => p.text));
+  else if (data.paragraphs && data.paragraphs.length) paras = data.paragraphs.map(p => p.text);
+  else paras = (data.text || '').split(/\n\s*\n/);
+  return paras.map(joinLines).filter(p => (p.match(/\p{L}/gu) || []).length >= 3).join('\n\n');
+}
+async function ocrLocal(canvases) {
+  setOcr(true, 'Carregando OCR…', 'Baixando o reconhecimento de texto (a primeira vez pode demorar)', 0.25);
+  await loadScript(TESS_URL);
+  if (!window.Tesseract) throw new Error('Não foi possível carregar o OCR. Verifique sua conexão.');
+  const n = canvases.length;
+  let cur = 0;
+  const worker = await Tesseract.createWorker(OCR_LANG[el.lang.value.slice(0, 2)] || 'por', 1, {
+    logger: m => {
+      const reading = m.status === 'recognizing text';
+      setOcr(true, reading ? `Reconhecendo texto · foto ${cur + 1} de ${n}` : 'Carregando OCR…', OCR_STATUS[m.status] || '',
+        reading ? 0.3 + 0.7 * (cur + (m.progress || 0)) / n : 0.25);
+    }
+  });
+  const parts = [];
+  let conf = 0;
+  try {
+    for (cur = 0; cur < n; cur++) {
+      const { data } = await worker.recognize(canvases[cur], {}, { text: true, blocks: true });
+      conf += data.confidence || 0;
+      parts.push(tessToText(data));
+    }
+  } finally {
+    await worker.terminate().catch(() => {});
+  }
+  return { text: parts.join('\n\n'), conf: Math.round(conf / n), lines: null, illegible: 0, notes: '' };
+}
+function cleanTranscript(t) {
+  return String(t).replace(/```[a-z]*\n?/gi, '').replace(/\r\n?/g, '\n')
+    .split('\n').map(l => l.replace(/[ \t]+/g, ' ').trim()).join('\n')
+    .replace(/\n{3,}/g, '\n\n').trim();
+}
+
+async function transcribe() {
+  if (ocrBusy) return;
+  if (!photos.length) return toast('Adicione ao menos uma foto da redação.');
+  const engine = state.engine;
+  if (engine === 'ai' && !aiReady()) { openSettings(); return toast('Informe a chave do Claude ou escolha a leitura no dispositivo.'); }
+  ocrBusy = true;
+  updateGo();
+  const n = photos.length;
+  try {
+    const canvases = [];
+    for (let i = 0; i < n; i++) {
+      setOcr(true, 'Preparando as imagens…', `Foto ${i + 1} de ${n}`, i / n * 0.2);
+      canvases.push(await prepCanvas(photos[i], engine === 'ai' ? AI_IMG_MAX : 2400, engine === 'ai' ? false : el.enhance.checked));
+    }
+    const urls = canvases.map(cv => downscaleURL(cv, AI_IMG_MAX));
+    let r;
+    if (engine === 'ai') {
+      setOcr(true, 'Claude está lendo a redação…', 'Transcrevendo a letra manuscrita — leva alguns segundos', 0.55);
+      r = await aiTranscribe(urls, m => setOcr(true, 'Claude está lendo a redação…', m, 0.55));
+    } else {
+      r = await ocrLocal(canvases);
+    }
+    const text = cleanTranscript(r.text);
+    if (countWords(text) < 3) throw new Error('Nenhum texto foi reconhecido. Tente uma foto mais nítida, bem iluminada e de cima.');
+    pendingImages = urls;
+    pendingLines = r.lines || null;
+    el.pasteArea.value = text;
+    updatePasteCount();
+    const low = r.conf != null && r.conf < 70;
+    const bn = $('transBanner');
+    bn.classList.remove('hidden');
+    bn.classList.toggle('warn', low || r.illegible > 0);
+    const parts = [`${plural(n, 'foto', 'fotos')} · ${engine === 'ai' ? 'lida pelo Claude' : 'lida no dispositivo'}`];
+    if (r.conf != null) parts.push(`confiança ${r.conf}%`);
+    if (r.lines) parts.push(`${r.lines} linhas escritas na folha`);
+    if (r.illegible) parts.push(plural(r.illegible, 'trecho ilegível marcado', 'trechos ilegíveis marcados'));
+    $('transMsg').textContent = parts.join(' · ') + `. Confira e corrija a transcrição antes de iniciar a correção${low ? ' — a leitura teve baixa confiança; considere usar o Claude para letra manuscrita' : ''}.${r.notes ? ' Observação: ' + r.notes : ''}`;
+    setSrc('texto');
+    el.pasteArea.focus({ preventScroll: true });
+    toast('Transcrição concluída — confira o texto antes de corrigir');
+  } catch (e) {
+    toast(e.message);
+    console.error(e);
+  } finally {
+    ocrBusy = false;
+    setOcr(false);
+    updateGo();
+  }
+}
+
+/* ========= Formulário de nova correção ========= */
+function setSrc(s) {
+  state.src = s;
+  document.querySelectorAll('#srcTabs [data-src]').forEach(b => b.classList.toggle('on', b.dataset.src === s));
+  $('srcFoto').classList.toggle('hidden', s !== 'foto');
+  $('srcArquivo').classList.toggle('hidden', s !== 'arquivo');
+  $('srcTexto').classList.toggle('hidden', s !== 'texto');
+  updateGo();
+}
+function updateGo() {
+  const btn = $('btnGo');
+  btn.classList.toggle('hidden', state.src === 'arquivo');
+  if (state.src === 'foto') {
+    $('goLbl').textContent = ocrBusy ? 'Transcrevendo…' : photos.length ? `Transcrever ${plural(photos.length, 'foto', 'fotos')}` : 'Transcrever fotos';
+    btn.disabled = ocrBusy || !photos.length;
+  } else {
+    $('goLbl').textContent = isEssay() ? 'Corrigir redação' : 'Revisar texto';
+    btn.disabled = false;
+  }
+}
+function updatePasteCount() {
+  const t = el.pasteArea.value;
+  $('pasteCount').textContent = `${plural(countWords(t), 'palavra', 'palavras')}${t.trim() ? ` · ≈ ${estLines(t)} linhas` : ''}`;
+}
+function setEngine(e, save) {
+  state.engine = e === 'ai' ? 'ai' : 'local';
+  if (save) store.set('ocrEngine', state.engine);
+  document.querySelectorAll('#engineSel .eng').forEach(b => { const on = b.dataset.engine === state.engine; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
+  el.enhance.closest('.switch').classList.toggle('hidden', state.engine === 'ai');
+}
+function updateEngineOptions() {
+  const ready = aiReady(), c = aiCfg();
+  const st = $('claudeSt');
+  st.textContent = ready ? 'ativo' : 'configurar';
+  st.classList.toggle('ok', ready);
+  if (!state.engine) state.engine = ready ? 'ai' : 'local';
+  setEngine(state.engine);
+  $('aiDot').className = ready ? 'ai' : 'off';
+  $('aiName').textContent = ready ? `Claude · ${aiModel(c).replace(/^claude-/, '').replace(/-(\d+)-(\d+)$/, ' $1.$2').replace(/^\w/, ch => ch.toUpperCase())}` : 'Claude · não configurado';
+}
+function syncModeUI() {
+  document.querySelectorAll('#modes .mode').forEach(b => b.classList.toggle('on', b.dataset.mode === state.mode));
+  $('essayFields').classList.toggle('hidden', !isEssay());
+  $('bancaWrap').classList.toggle('hidden', state.mode !== 'concurso');
+  $('essayFields').classList.toggle('one', state.mode !== 'concurso');
+  el.banca.value = state.banca;
+  updateGo();
+}
+function setMode(mode, banca) {
+  state.mode = MODE_NAMES[mode] ? mode : 'enem';
+  if (banca && BANCAS[banca]) state.banca = banca;
+  store.set('mode', state.mode);
+  store.set('banca', state.banca);
+  syncModeUI();
+  if (state.view === 'review') render();
+}
+function setTema(v) {
+  state.tema = v;
+  if (document.activeElement !== el.tema) el.tema.value = v;
+  if (document.activeElement !== el.avaTema) el.avaTema.value = v;
+}
+
+function startFromText() {
+  const t = el.pasteArea.value.trim();
+  if (!t) { el.pasteArea.focus(); return toast('Cole ou digite o texto primeiro.'); }
+  const first = t.split('\n').find(l => l.trim()).trim();
+  const name = isEssay() && state.tema.trim()
+    ? 'Redação · ' + (state.tema.trim().length > 48 ? state.tema.trim().slice(0, 48).trim() + '…' : state.tema.trim())
+    : (first.length > 50 ? first.slice(0, 50).trim() + '…' : first);
+  const imgs = pendingImages;
+  startDoc(name, t, null, imgs);
+  if (pendingLines) state.linesUser = pendingLines;
+  pendingLines = null;
+  if (imgs.length) { photos.forEach(p => URL.revokeObjectURL(p.url)); photos.length = 0; renderThumbs(); }
+  pendingImages = [];
+  $('transBanner').classList.add('hidden');
+  el.pasteArea.value = '';
+  updatePasteCount();
+  check();
+}
+
+/* ========= Histórico ========= */
+let saveTimer;
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  if (!state.docId || state.busy || !state.text) return;
+  saveTimer = setTimeout(saveHistory, 600);
+}
+function saveHistory() {
+  if (!state.docId || state.busy) return;
+  const sc = computeScore().value;
+  if (sc == null || state.found === 0 && !state.matches.length && state.firstScore == null) return;
+  const c = tally();
+  const ev = isEssay() ? evaluate() : null;
+  const hist = store.get('history', []).filter(h => h.id !== state.docId);
+  hist.unshift({
+    id: state.docId, name: state.fileName, date: Date.now(), lang: el.lang.value,
+    mode: state.mode, banca: state.banca, tema: state.tema, linesUser: state.linesUser,
+    overrides: state.overrides, ai: state.ai, zero: state.zero, fixedCats: state.fixedCats,
+    score: sc, firstScore: state.firstScore,
+    scoreLabel: ev ? fmtR(ev.total, ev.R) : fmtScore(sc), model: ev ? ev.R.title : 'Revisão', norm: ev ? r2(ev.pct * 10) : sc,
+    words: countWords(state.text), found: c.found, fixed: c.fixed, pending: c.pending, text: state.text
+  });
+  hist.length = Math.min(hist.length, HISTORY_MAX);
+  // se o armazenamento estiver cheio, descarta o texto das correções mais antigas
+  let keep = hist.length;
+  while (!store.set('history', hist) && keep > 0) {
+    keep--;
+    for (let i = keep; i < hist.length; i++) { delete hist[i].text; delete hist[i].ai; }
+    if (keep === 0) { hist.length = 1; delete hist[0].text; store.set('history', hist); break; }
+  }
+}
+
+function renderHome() {
+  const hist = store.get('history', []);
+  $('hsDocs').textContent = fmtN(hist.length);
+  const scored = hist.filter(h => typeof (h.norm ?? h.score) === 'number');
+  $('hsAvg').textContent = scored.length ? fmtScore(scored.reduce((s, h) => s + (h.norm ?? h.score), 0) / scored.length) : '–';
+  $('hsFixed').textContent = fmtN(hist.reduce((s, h) => s + (h.fixed || 0), 0));
+  $('hsWords').textContent = fmtN(hist.reduce((s, h) => s + (h.words || 0), 0));
+
+  const ul = $('histList');
+  if (!hist.length) {
+    ul.innerHTML = `<li style="cursor:default;background:none"><div class="empty" style="width:100%"><div class="ic"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg></div><strong>Nenhuma correção ainda</strong>Suas redações corrigidas aparecerão aqui.</div></li>`;
+    return;
+  }
+  ul.innerHTML = hist.map(h => {
+    const info = scoreInfo(h.norm ?? h.score);
+    const tag = h.mode === 'enem' ? 'ENEM' : h.mode === 'ssa' ? 'SSA' : h.mode === 'concurso' ? (BANCAS[h.banca] || 'CONC').slice(0, 4).toUpperCase() : 'REV';
+    return `<li data-hid="${esc(h.id)}" title="${h.text ? 'Abrir correção' : 'Texto não disponível (armazenamento cheio)'}">
+      <div class="doc-ic">${tag}</div>
+      <div class="info"><div class="nm">${esc(h.name)}</div><div class="mt">${fmtDate(h.date)} · ${esc(h.model || 'Revisão')} · ${fmtN(h.words)} palavras · ${fmtN(h.pending || 0)} pendentes</div></div>
+      <span class="pill" style="background:${info.soft};color:${info.color}">${esc(h.scoreLabel || fmtScore(h.score))}</span>
+      <button class="del" data-del="${esc(h.id)}" title="Remover do histórico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+    </li>`;
+  }).join('');
+}
+
+function openFromHistory(id) {
+  const h = store.get('history', []).find(x => x.id === id);
+  if (!h) return;
+  if (!h.text) return toast('O texto desta correção não está mais disponível.');
+  if (h.lang) el.lang.value = h.lang;
+  if (h.mode) setMode(h.mode, h.banca);
+  setTema(h.tema || '');
+  startDoc(h.name, h.text, h.id);
+  state.firstScore = h.firstScore ?? null;
+  state.linesUser = h.linesUser ?? null;
+  state.overrides = h.overrides || {};
+  state.ai = h.ai || null;
+  state.zero = !!h.zero;
+  state.fixedCats = h.fixedCats || [];
+  check();
+}
+
+/* ========= Ações ========= */
+function snapshot() {
+  state.history.push({ text: state.text, matches: state.matches.map(m => ({ ...m })), ignored: state.ignored, fixedCats: [...state.fixedCats] });
+  if (state.history.length > 100) state.history.shift();
+}
+
+function replaceAt(m, rep) {
+  const end = m.offset + m.length;
+  state.text = state.text.slice(0, m.offset) + rep + state.text.slice(end);
+  const delta = rep.length - m.length;
+  state.matches = state.matches.filter(o => {
+    if (o === m) return false;
+    const oEnd = o.offset + o.length;
+    if (o.offset < end && oEnd > m.offset) return false;          // sobreposição: descarta
+    if (o.offset >= end) o.offset += delta;                       // desloca os posteriores
+    return true;
+  });
+  state.fixedCats.push(m.cat);                                    // o desvio continua contando na nota da redação
+}
+
+function applyOne(id, i) {
+  const m = state.matches.find(x => x.id === id);
+  if (!m) return;
+  snapshot();
+  replaceAt(m, m.replacements[i]);
+  hidePop();
+  render();
+}
+
+function applyAll() {
+  const vis = visibleMatches().filter(m => m.replacements.length);
+  if (!vis.length) return;
+  snapshot();
+  let n = 0, lastStart = Infinity;
+  for (const m of vis.sort((a, b) => b.offset - a.offset)) {   // de trás para frente evita deslocamentos
+    if (m.offset + m.length > lastStart) continue;
+    if (!state.matches.includes(m)) continue;
+    replaceAt(m, m.replacements[0]);
+    lastStart = m.offset;
+    n++;
+  }
+  hidePop();
+  render();
+  toast(`${n} ${n === 1 ? 'correção aplicada' : 'correções aplicadas'}`);
+}
+
+function ignore(id) {
+  snapshot();
+  state.matches = state.matches.filter(m => m.id !== id);
+  state.ignored++;
+  hidePop(); render();
+}
+function ignoreAll() {
+  const ids = new Set(visibleMatches().map(m => m.id));
+  snapshot();
+  state.matches = state.matches.filter(m => !ids.has(m.id));
+  state.ignored += ids.size;
+  hidePop(); render();
+  toast(`${ids.size} sugestões ignoradas`);
+}
+function ignoreRule(id) {
+  const m = state.matches.find(x => x.id === id);
+  if (!m) return;
+  state.ignoredRules.add(m.ruleId);
+  hidePop(); render();
+  toast('Regra ignorada neste documento');
+}
+function addDict(id) {
+  const m = state.matches.find(x => x.id === id);
+  if (!m) return;
+  const w = state.text.slice(m.offset, m.offset + m.length);
+  state.dict.add(w.toLowerCase());
+  store.set('dict', [...state.dict]);
+  hidePop(); render();
+  toast(`"${w}" adicionada ao dicionário`);
+}
+function undo() {
+  const s = state.history.pop();
+  if (!s) return;
+  state.text = s.text;
+  state.matches = s.matches;
+  state.ignored = s.ignored || 0;
+  state.fixedCats = s.fixedCats || [];
+  hidePop(); render();
+}
+
+function focusMatch(id, fromDoc) {
+  state.activeId = id;
+  document.querySelectorAll('.err.active,.list .sg.active').forEach(n => n.classList.remove('active'));
+  const span = el.doc.querySelector(`.err[data-id="${id}"]`);
+  const card = el.list.querySelector(`.sg[data-id="${id}"]`);
+  if (span) span.classList.add('active');
+  if (card) card.classList.add('active');
+  if (fromDoc && card && state.sideTab === 'sug') card.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  if (!fromDoc && span) span.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+
+/* ========= Popover ========= */
+function showPop(span) {
+  const id = +span.dataset.id;
+  const m = state.matches.find(x => x.id === id);
+  if (!m) return;
+  el.pop.innerHTML = cardHTML(m, true);
+  el.pop.classList.remove('hidden');
+  const r = span.getBoundingClientRect();
+  const pw = el.pop.offsetWidth, ph = el.pop.offsetHeight;
+  const left = Math.min(Math.max(12, r.left), innerWidth - pw - 12);
+  let top = r.bottom + 8;
+  if (top + ph > innerHeight - 12) top = Math.max(12, r.top - ph - 8);
+  el.pop.style.left = left + 'px';
+  el.pop.style.top = top + 'px';
+}
+function hidePop() { el.pop.classList.add('hidden'); }
+
+/* ========= Carregamento ========= */
+function showLoading(title, msg, frac) {
+  el.loading.classList.remove('hidden');
+  el.loadTitle.textContent = title;
+  el.loadMsg.textContent = msg || '';
+  el.loadBar.style.width = Math.round((frac || 0) * 100) + '%';
+}
+function hideLoading() { el.loading.classList.add('hidden'); }
+
+function startDoc(name, text, id, images = []) {
+  if (state.editing) toggleEdit(true);
+  state.docId = id || Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  state.fileName = name;
+  state.text = text;
+  state.matches = []; state.history = []; state.ignoredRules.clear();
+  state.firstScore = null; state.found = 0; state.ignored = 0; state.failedChunks = 0;
+  state.filter = 'all';
+  state.linesUser = null; state.overrides = {}; state.ai = null; state.zero = false; state.fixedCats = [];
+  state.images = images || [];
+  $('navReview').disabled = false;
+  showView('review');
+  setSideTab(isEssay() ? 'ava' : 'sug');
+  render();
+}
+
+async function handleFile(file) {
+  if (!file) return;
+  if (isImage(file)) { setSrc('foto'); return addPhotos([file]); }
+  if (file.size > 15 * 1024 * 1024) return toast('Arquivo muito grande (máximo 15 MB).');
+  const ext = file.name.split('.').pop().toLowerCase();
+  startDoc(file.name, '');
+  showLoading('Lendo arquivo…', file.name, 0);
+  try {
+    const text = await extractText(file);
+    if (!text.trim()) {
+      if (ext === 'pdf') {
+        showLoading('PDF escaneado detectado…', 'Convertendo as páginas em imagens', 0.5);
+        const imgs = await pdfToPhotos(file);
+        backHome();
+        addPhotos(imgs);
+        toast('PDF escaneado: as páginas foram adicionadas como fotos. Clique em “Transcrever”.');
+        return;
+      }
+      throw new Error('Não foi encontrado texto no arquivo.');
+    }
+    state.text = text;
+    render();
+    await check();
+  } catch (e) {
+    toast(e.message);
+    console.error(e);
+    backHome();
+  } finally {
+    el.fileInput.value = '';
+  }
+}
+function backHome() {
+  hideLoading();
+  state.docId = null;
+  $('navReview').disabled = true;
+  showView('home');
+}
+function handleFiles(list) {
+  const files = [...(list || [])];
+  if (!files.length) return;
+  const imgs = files.filter(isImage);
+  if (imgs.length) { addPhotos(imgs); if (imgs.length < files.length) toast('Imagens adicionadas às fotos; envie os documentos um de cada vez.'); return; }
+  handleFile(files[0]);
+}
+
+/* ========= Edição manual ========= */
+function toggleEdit(discard) {
+  if (!state.editing) {
+    state.editing = true;
+    el.docEdit.value = state.text;
+    el.doc.classList.add('hidden');
+    el.docEdit.classList.remove('hidden');
+    el.docEdit.focus();
+    el.editLbl.textContent = 'Concluir edição';
+    hidePop();
+  } else {
+    state.editing = false;
+    el.doc.classList.remove('hidden');
+    el.docEdit.classList.add('hidden');
+    el.editLbl.textContent = 'Editar texto';
+    if (discard !== true && el.docEdit.value !== state.text) {
+      snapshot();
+      state.text = el.docEdit.value;
+      check();
+    }
+  }
+}
+
+/* ========= Exportação ========= */
+function safeName() { return state.fileName.replace(/\.[^.]{1,5}$/, '').replace(/[\\/:*?"<>|…]+/g, '').trim() || 'texto'; }
+function baseName() { return safeName() + '-revisado'; }
+function download(content, name, type) {
+  const blob = new Blob([content], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function toHTMLDoc(forWord) {
+  const paras = state.text.split(/\n/).map(p => p.trim() ? `<p>${esc(p)}</p>` : '<p>&nbsp;</p>').join('\n');
+  const ns = forWord ? ' xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"' : '';
+  return `<!DOCTYPE html><html lang="pt-BR"${ns}><head><meta charset="utf-8"><title>${esc(baseName())}</title>
+<style>body{font-family:Calibri,Arial,sans-serif;font-size:12pt;line-height:1.5;max-width:780px;margin:40px auto;padding:0 20px}p{margin:0 0 8pt}</style></head><body>${paras}</body></html>`;
+}
+
+const RPT_COLORS = { ortografia: '#d92d20', gramatica: '#4f46e5', pontuacao: '#c4620a', tipografia: '#7a5af8', estilo: '#0e8a7d', outros: '#667085' };
+function toReport() {
+  const sc = computeScore(), c = tally(), mt = textMetrics(state.text), all = activeMatches();
+  const ev = isEssay() ? evaluate() : null;
+  const v10 = ev ? ev.pct * 10 : (sc.value ?? 0);
+  const info = ev || sc.value != null ? scoreInfo(v10) : { lbl: '–' };
+  const colorOf = v => v >= 9 ? '#0f8a5f' : v >= 7 ? '#4f46e5' : v >= 5 ? '#b54708' : '#d1342b';
+  const mainVal = ev ? fmtR(ev.total, ev.R) : sc.value == null ? '–' : fmtScore(sc.value);
+  const mainMax = ev ? fmtR(ev.R.max, ev.R) : '10';
+  const counts = {};
+  for (const m of all) counts[m.cat] = (counts[m.cat] || 0) + 1;
+  const t = state.text;
+  const rows = all.map((m, i) => {
+    const a = Math.max(0, m.offset - 40), b = Math.min(t.length, m.offset + m.length + 40);
+    const ctx = (a > 0 ? '…' : '') + esc(t.slice(a, m.offset)) + '<b style="color:#d1342b;text-decoration:line-through">' + esc(t.slice(m.offset, m.offset + m.length)) + '</b>' + esc(t.slice(m.offset + m.length, b)) + (b < t.length ? '…' : '');
+    return `<tr><td>${i + 1}</td><td><span class="tag" style="background:${RPT_COLORS[m.cat]}">${CATS[m.cat]}</span></td><td>${esc(m.message)}<div class="ctx">${ctx.replace(/\n/g, ' ')}</div></td><td>${m.replacements.slice(0, 3).map(r => `<span class="s">${esc(r) || '(remover)'}</span>`).join(' ') || '—'}</td></tr>`;
+  }).join('');
+
+  let essay = '';
+  if (ev) {
+    const R = ev.R;
+    const crit = ev.items.map(it => `<tr><td><b>${esc(it.c.short && it.c.name.startsWith('Competência') ? it.c.name + ' · ' + it.c.short : it.c.name)}</b><div class="muted" style="font-size:12px">${esc(it.c.desc)}</div></td>
+      <td style="white-space:nowrap"><b style="font-size:16px;color:${colorOf(it.val / it.c.max * 10)}">${fmtR(it.val, R)}</b> <span class="muted">/ ${fmtR(it.c.max, R)}</span><div class="muted" style="font-size:11px">${SRC_LABEL[it.src]}</div></td>
+      <td><ul>${it.notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul>${it.aiNote ? `<div class="aic"><b>Parecer:</b> ${esc(it.aiNote)}</div>` : ''}</td></tr>`).join('');
+    const x = ev.extra;
+    essay = `<div class="card"><h2>Avaliação por critério · ${esc(R.title)}</h2>
+      ${state.tema ? `<p style="margin:0 0 12px"><span class="muted">Tema:</span> ${esc(state.tema)}</p>` : ''}
+      ${ev.zero ? `<p class="zero">Nota zero: ${esc(ev.zero)}</p>` : ''}
+      <table><thead><tr><th>Critério</th><th>Nota</th><th>Observações</th></tr></thead><tbody>${crit}</tbody></table>
+      ${x ? `<p class="formula">NR = NC − ${fmtPlain(x.mult)} × NE ÷ TL = ${fmtPlain(x.NC)} − ${fmtPlain(x.mult)} × ${x.NE} ÷ ${x.TL} = <b>${mainVal}</b></p>` : ''}
+      ${ev.warns.length ? `<ul class="warn">${ev.warns.map(w => `<li>${esc(w)}</li>`).join('')}</ul>` : ''}
+      ${ev.ai && (ev.ai.general || ev.ai.improvements.length) ? `<div class="aic" style="margin-top:14px">${ev.ai.general ? `<p style="margin:0 0 8px"><b>Parecer geral:</b> ${esc(ev.ai.general)}</p>` : ''}${ev.ai.strengths.length ? `<b>Pontos fortes</b><ul>${ev.ai.strengths.map(s => `<li>${esc(s)}</li>`).join('')}</ul>` : ''}${ev.ai.improvements.length ? `<b>Como melhorar</b><ul>${ev.ai.improvements.map(s => `<li>${esc(s)}</li>`).join('')}</ul>` : ''}</div>` : ''}
+      <p class="muted" style="font-size:12px;margin:12px 0 0">Notas automáticas são estimativas; notas marcadas como “Ajuste manual” foram definidas pelo corretor.</p></div>`;
+  }
+
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Relatório de correção · ${esc(state.fileName)}</title>
+<style>
+body{font-family:Inter,Segoe UI,Arial,sans-serif;color:#121722;background:#f4f5f8;margin:0;padding:32px 16px;font-size:14px;line-height:1.5}
+.wrap{max-width:900px;margin:0 auto}
+.card{background:#fff;border:1px solid #e4e7ec;border-radius:14px;padding:22px 24px;margin-bottom:16px}
+h1{font-size:22px;margin:0 0 2px}h2{font-size:15px;margin:0 0 14px}
+.muted{color:#667085}
+.top{display:flex;gap:22px;align-items:center;flex-wrap:wrap}
+.ring{width:104px;height:104px;border-radius:50%;background:conic-gradient(${colorOf(v10)} ${v10 * 10}%,#e9ebf0 0);display:grid;place-items:center}
+.ring div{width:86px;height:86px;border-radius:50%;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:22px;font-weight:700;line-height:1.1}
+.ring small{font-size:11px;color:#667085;font-weight:500}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.k{background:#f3f4f7;border-radius:10px;padding:10px 12px}.k b{display:block;font-size:20px}.k span{font-size:12px;color:#667085}
+table{width:100%;border-collapse:collapse}td,th{text-align:left;padding:10px 8px;border-bottom:1px solid #eef0f3;vertical-align:top}th{font-size:12px;color:#667085;text-transform:uppercase;letter-spacing:.05em}
+td ul{margin:0;padding-left:16px;font-size:13px;color:#344054}
+.tag{color:#fff;font-size:11px;font-weight:600;padding:2px 7px;border-radius:6px;white-space:nowrap}
+.ctx{color:#667085;font-size:13px;margin-top:4px;font-family:Georgia,serif}
+.s{display:inline-block;background:#e3f6ed;color:#0f8a5f;font-weight:600;padding:1px 7px;border-radius:6px;margin:0 2px 2px 0}
+.aic{background:#f1edff;border-radius:8px;padding:8px 10px;font-size:13px;margin-top:6px}
+.aic ul{margin:4px 0 8px;padding-left:18px}
+.formula{font-family:ui-monospace,Menlo,monospace;background:#f3f4f7;padding:10px 12px;border-radius:8px;font-size:13px}
+.zero{background:#fdecea;color:#d1342b;padding:10px 12px;border-radius:8px}
+.warn{background:#fef3e2;color:#b54708;padding:10px 12px 10px 28px;border-radius:8px;font-size:13px}
+.text{white-space:pre-wrap;font-family:Georgia,serif;font-size:15px;line-height:1.7}
+@media(max-width:640px){.grid{grid-template-columns:repeat(2,1fr)}}
+@media print{body{background:#fff;padding:0}.card{border:0;padding:12px 0}}
+</style></head><body><div class="wrap">
+<div class="card"><div class="top"><div class="ring"><div>${mainVal}<small>de ${mainMax}</small></div></div>
+<div><div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.06em">Relatório de correção · ${ev ? esc(ev.R.title) : 'Revisão de texto'}</div><h1>${esc(state.fileName)}</h1>
+<div>Nota <b>${mainVal}</b> de ${mainMax} · <b style="color:${colorOf(v10)}">${ev && ev.zero ? 'Anulada' : info.lbl}</b></div>
+<div class="muted" style="font-size:13px">${fmtDate(Date.now())} · ${esc(el.lang.options[el.lang.selectedIndex].text)}${!ev && state.firstScore != null && state.firstScore !== sc.value ? ` · nota original ${fmtScore(state.firstScore)}` : ''}${ev ? ` · ${ev.ai ? 'avaliação do Claude' : 'estimativa automática'}` : ''}</div></div></div></div>
+${essay}
+<div class="card"><h2>Resumo</h2><div class="grid">
+<div class="k"><b>${fmtN(c.found)}</b><span>Desvios encontrados</span></div><div class="k"><b>${fmtN(c.fixed)}</b><span>Corrigidos</span></div>
+<div class="k"><b>${fmtN(c.pending)}</b><span>Pendentes</span></div><div class="k"><b>${fmtN(c.ignored)}</b><span>Ignorados</span></div>
+<div class="k"><b>${fmtN(mt.words)}</b><span>Palavras</span></div><div class="k"><b>${fmtN(mt.paragraphs)}</b><span>Parágrafos</span></div>
+<div class="k"><b>≈ ${fmtN(ev ? ev.lines : estLines(t))}</b><span>Linhas</span></div><div class="k"><b>${Math.round(mt.flesch)}</b><span>Legibilidade (${fleschLabel(mt.flesch)})</span></div>
+</div>
+<p class="muted" style="margin:14px 0 0;font-size:13px">Pendentes por categoria: ${Object.keys(CATS).filter(k => counts[k]).map(k => `${CATS[k]} ${counts[k]}`).join(' · ') || 'nenhum'}</p></div>
+<div class="card"><h2>Desvios pendentes (${all.length})</h2>${all.length ? `<table><thead><tr><th>#</th><th>Tipo</th><th>Problema</th><th>Sugestão</th></tr></thead><tbody>${rows}</tbody></table>` : '<p class="muted">Nenhum desvio pendente.</p>'}</div>
+<div class="card"><h2>Texto</h2><div class="text">${esc(state.text)}</div></div>
+<p class="muted" style="text-align:center;font-size:12px">Gerado pelo Revisor · verificação gramatical com LanguageTool</p>
+</div></body></html>`;
+}
+
+function exportAs(kind) {
+  el.dlMenu.classList.add('hidden');
+  if (state.editing) toggleEdit();
+  if (kind === 'txt') download('﻿' + state.text.replace(/\n/g, '\r\n'), baseName() + '.txt', 'text/plain;charset=utf-8');
+  if (kind === 'html') download(toHTMLDoc(false), baseName() + '.html', 'text/html;charset=utf-8');
+  if (kind === 'docx') download('﻿' + toHTMLDoc(true), baseName() + '.doc', 'application/msword');
+  if (kind === 'report') download(toReport(), safeName() + '-relatorio.html', 'text/html;charset=utf-8');
+  toast('Download iniciado');
+}
+
+/* ========= Eventos ========= */
+/* Arquivos */
+el.fileInput.addEventListener('change', e => { handleFiles(e.target.files); e.target.value = ''; });
+['dragenter', 'dragover'].forEach(ev => el.drop.addEventListener(ev, e => { e.preventDefault(); el.drop.classList.add('over'); }));
+['dragleave', 'drop'].forEach(ev => el.drop.addEventListener(ev, e => { e.preventDefault(); el.drop.classList.remove('over'); }));
+el.drop.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
+window.addEventListener('dragover', e => e.preventDefault());
+window.addEventListener('drop', e => e.preventDefault());
+
+/* Fotos */
+$('camInput').addEventListener('change', e => { addPhotos([...e.target.files]); e.target.value = ''; });
+$('imgInput').addEventListener('change', e => { addPhotos([...e.target.files]); e.target.value = ''; });
+const camZone = $('camZone');
+['dragenter', 'dragover'].forEach(ev => camZone.addEventListener(ev, e => { e.preventDefault(); camZone.querySelectorAll('.cam-btn').forEach(b => b.classList.add('over')); }));
+['dragleave', 'drop'].forEach(ev => camZone.addEventListener(ev, e => { e.preventDefault(); camZone.querySelectorAll('.cam-btn').forEach(b => b.classList.remove('over')); }));
+camZone.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
+document.addEventListener('paste', e => {   // colar imagem (Ctrl+V) na tela inicial
+  if (state.view !== 'home' || !e.clipboardData) return;
+  const imgs = [...e.clipboardData.files].filter(isImage);
+  if (imgs.length) { e.preventDefault(); addPhotos(imgs); }
+});
+$('engineSel').addEventListener('click', e => {
+  const b = e.target.closest('[data-engine]');
+  if (!b || ocrBusy) return;
+  setEngine(b.dataset.engine, true);
+  if (state.engine === 'ai' && !aiReady()) { toast('Informe a chave do Claude para ler letra manuscrita.'); openSettings(); }
+});
+$('transView').onclick = () => setSrc('foto');
+
+/* Formulário */
+document.querySelectorAll('#srcTabs [data-src]').forEach(b => b.addEventListener('click', () => setSrc(b.dataset.src)));
+$('modes').addEventListener('click', e => { const b = e.target.closest('[data-mode]'); if (b) setMode(b.dataset.mode); });
+el.banca.addEventListener('change', () => setMode('concurso', el.banca.value));
+el.tema.addEventListener('input', () => setTema(el.tema.value));
+el.pasteArea.addEventListener('input', updatePasteCount);
+$('btnGo').onclick = () => state.src === 'foto' ? transcribe() : startFromText();
+
+/* Navegação lateral */
+document.querySelectorAll('.nav [data-nav]').forEach(b => b.addEventListener('click', () => {
+  const n = b.dataset.nav;
+  if (n === 'home' || n === 'review') return showView(n);
+  el.app.classList.remove('nav-open');
+  if (n === 'history') { showView('home'); $('historyCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  if (n === 'dict') openDict();
+  if (n === 'settings') openSettings();
+  if (n === 'theme') toggleTheme();
+}));
+$('menuBtn').onclick = () => el.app.classList.add('nav-open');
+$('scrim').onclick = () => el.app.classList.remove('nav-open');
+$('topNew').onclick = () => {
+  if (state.editing) toggleEdit();
+  showView('home');
+};
+
+/* Histórico */
+$('histList').addEventListener('click', e => {
+  const del = e.target.closest('[data-del]');
+  if (del) {
+    e.stopPropagation();
+    if (!confirm('Remover esta correção do histórico?')) return;
+    store.set('history', store.get('history', []).filter(h => h.id !== del.dataset.del));
+    if (state.docId === del.dataset.del) state.docId = null;
+    renderHome();
+    return;
+  }
+  const li = e.target.closest('[data-hid]');
+  if (li) openFromHistory(li.dataset.hid);
+});
+
+/* Documento e sugestões */
+el.doc.addEventListener('click', e => {
+  const span = e.target.closest('.err');
+  if (!span) return;
+  e.stopPropagation();
+  focusMatch(+span.dataset.id, true);
+  showPop(span);
+});
+
+function handleAction(e) {
+  const b = e.target.closest('[data-act]');
+  if (!b) return false;
+  e.stopPropagation();
+  const id = +b.dataset.id;
+  ({ apply: () => applyOne(id, +b.dataset.i), ignore: () => ignore(id), ignoreRule: () => ignoreRule(id), addDict: () => addDict(id) })[b.dataset.act]();
+  return true;
+}
+el.list.addEventListener('click', e => {
+  if (handleAction(e)) return;
+  const c = e.target.closest('.sg');
+  if (c) focusMatch(+c.dataset.id, false);
+});
+el.pop.addEventListener('click', e => { handleAction(e); e.stopPropagation(); });
+el.tabs.addEventListener('click', e => {
+  const t = e.target.closest('.chip');
+  if (!t) return;
+  state.filter = t.dataset.f; hidePop(); render();
+});
+$('sideTabs').addEventListener('click', e => {
+  const b = e.target.closest('[data-side]');
+  if (b) setSideTab(b.dataset.side);
+});
+$('scoreCard').onclick = () => {
+  setSideTab(isEssay() ? 'ava' : 'ana');
+  if (innerWidth <= 1100) document.querySelector('.side').scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+/* Avaliação */
+el.avaMode.addEventListener('change', () => { const [m, b] = el.avaMode.value.split(':'); setMode(m, b); });
+el.avaTema.addEventListener('change', () => { setTema(el.avaTema.value.trim()); render(); });
+el.avaLines.addEventListener('change', () => { const n = parseInt(el.avaLines.value, 10); state.linesUser = n > 0 ? n : null; render(); });
+el.avaBody.addEventListener('change', e => {
+  const s = e.target.closest('[data-crit]');
+  if (s) {
+    const key = getRubric().key;
+    state.overrides = { ...state.overrides, [key]: { ...(state.overrides[key] || {}), [s.dataset.crit]: parseFloat(s.value) } };
+    return render();
+  }
+  if (e.target.matches('[data-ava="zero"]')) { state.zero = e.target.checked; render(); }
+});
+el.avaBody.addEventListener('click', e => {
+  const b = e.target.closest('button[data-ava]');
+  if (!b) return;
+  if (b.dataset.ava === 'ai') aiGrade();
+  if (b.dataset.ava === 'reset') {
+    const o = { ...state.overrides }; delete o[getRubric().key]; state.overrides = o;
+    render(); toast('Notas restauradas');
+  }
+});
+$('orig').addEventListener('click', e => {
+  const img = e.target.closest('img[data-full]');
+  if (!img) return;
+  const w = window.open();
+  if (w) { w.document.title = 'Redação · página ' + (+img.dataset.full + 1); w.document.body.style.margin = '0'; w.document.body.style.background = '#111'; const i = w.document.createElement('img'); i.src = img.src; i.style.cssText = 'max-width:100%;display:block;margin:auto'; w.document.body.appendChild(i); }
+});
+
+document.addEventListener('click', e => {
+  hidePop();
+  if (!e.target.closest('#btnDownload')) el.dlMenu.classList.add('hidden');
+});
+el.doc.addEventListener('scroll', hidePop);
+window.addEventListener('resize', hidePop);
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { hidePop(); el.dlMenu.classList.add('hidden'); el.app.classList.remove('nav-open'); document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden')); }
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z' && !state.editing && state.view === 'review' && !['TEXTAREA', 'INPUT', 'SELECT'].includes(document.activeElement.tagName)) {
+    e.preventDefault(); undo();
+  }
+});
+
+$('btnApplyAll').onclick = applyAll;
+$('btnIgnoreAll').onclick = ignoreAll;
+el.btnUndo.onclick = undo;
+el.btnEdit.onclick = () => toggleEdit();
+$('btnRecheck').onclick = () => { if (state.editing) toggleEdit(); else check(); };
+$('btnCopy').onclick = async () => {
+  const t = state.editing ? el.docEdit.value : state.text;
+  try { await navigator.clipboard.writeText(t); toast('Texto copiado'); }
+  catch { toast('Não foi possível copiar automaticamente'); }
+};
+$('btnDownload').onclick = e => { e.stopPropagation(); el.dlMenu.classList.toggle('hidden'); };
+el.dlMenu.addEventListener('click', e => { const b = e.target.closest('[data-dl]'); if (b) exportAs(b.dataset.dl); });
+
+/* Modais */
+document.querySelectorAll('.modal').forEach(m => m.addEventListener('click', e => {
+  if (e.target === m || e.target.closest('[data-close]')) m.classList.add('hidden');
+}));
+function updateService() {
+  const own = usingOwnService(), c = store.get('cfg', {});
+  $('svcName').textContent = own ? (c.user && c.key ? 'LanguageTool · Premium' : 'LanguageTool · servidor próprio') : 'LanguageTool · serviço público';
+}
+const MX_IDS = { cebraspe: 'mxCebraspe', fgv: 'mxFgv', fcc: 'mxFcc', vunesp: 'mxVunesp' };
+function openSettings() {
+  const c = store.get('cfg', {});
+  $('cfgUrl').value = c.url || ''; $('cfgUser').value = c.user || ''; $('cfgKey').value = c.key || '';
+  const a = aiCfg(), m = aiModel(a);
+  $('aiKey').value = a.key || '';
+  $('aiKey').type = 'password'; $('aiKeyShow').textContent = 'Mostrar';
+  $('aiModelSel').value = CLAUDE_MODELS.includes(m) ? m : 'custom';
+  $('aiModel').value = CLAUDE_MODELS.includes(m) ? '' : m;
+  $('aiModelWrap').classList.toggle('hidden', $('aiModelSel').value !== 'custom');
+  $('aiAuto').checked = a.auto !== false;
+  $('aiTestSt').textContent = ''; $('aiTestSt').className = 'test-st';
+  for (const b of Object.keys(BANCAS)) $(MX_IDS[b]).value = concMax(b);
+  $('cbMult').value = cbMult();
+  $('settingsModal').classList.remove('hidden');
+}
+const formModel = () => $('aiModelSel').value === 'custom' ? $('aiModel').value.trim() : $('aiModelSel').value;
+$('aiModelSel').addEventListener('change', () => $('aiModelWrap').classList.toggle('hidden', $('aiModelSel').value !== 'custom'));
+$('aiKeyShow').onclick = () => { const k = $('aiKey'); k.type = k.type === 'password' ? 'text' : 'password'; $('aiKeyShow').textContent = k.type === 'password' ? 'Mostrar' : 'Ocultar'; };
+$('aiTest').onclick = async () => {
+  const st = $('aiTestSt'), key = $('aiKey').value.trim();
+  if (!key) { st.className = 'test-st err'; st.textContent = 'Informe a chave primeiro.'; return; }
+  st.className = 'test-st'; st.textContent = 'Testando…';
+  $('aiTest').disabled = true;
+  try {
+    await aiCall({ system: 'Responda de forma curta.', prompt: 'Responda apenas: ok', maxTokens: 16, cfg: { key, model: formModel() } });
+    st.className = 'test-st ok'; st.textContent = `✓ Conectado ao ${formModel() || AI_PROVIDERS.anthropic.model}`;
+  } catch (e) {
+    st.className = 'test-st err'; st.textContent = e.message;
+  } finally { $('aiTest').disabled = false; }
+};
+$('cfgSave').onclick = () => {
+  store.set('cfg', { url: $('cfgUrl').value.trim(), user: $('cfgUser').value.trim(), key: $('cfgKey').value.trim() });
+  const hadKey = aiReady();
+  store.set('ai', { provider: 'anthropic', key: $('aiKey').value.trim(), model: formModel(), auto: $('aiAuto').checked });
+  if (!hadKey && aiReady()) setEngine('ai', true);      // acabou de configurar: passa a ler com o Claude
+  if (!aiReady() && state.engine === 'ai') setEngine('local', true);
+  const mx = {};
+  for (const b of Object.keys(BANCAS)) { const v = parseFloat($(MX_IDS[b]).value); if (v > 0 && v !== BANCA_MAX[b]) mx[b] = v; }
+  store.set('concMax', mx);
+  const mult = parseFloat($('cbMult').value);
+  store.set('cbMult', mult > 0 ? mult : 2);
+  $('settingsModal').classList.add('hidden');
+  updateService();
+  updateEngineOptions();
+  if (state.view === 'review') render();
+  toast('Configurações salvas');
+};
+function openDict() {
+  $('dictArea').value = [...state.dict].sort().join('\n');
+  $('dictModal').classList.remove('hidden');
+}
+$('dictSave').onclick = () => {
+  state.dict = new Set($('dictArea').value.split(/\n/).map(w => w.trim().toLowerCase()).filter(Boolean));
+  store.set('dict', [...state.dict]);
+  $('dictModal').classList.add('hidden');
+  render();
+  toast('Dicionário atualizado');
+};
+
+/* Preferências */
+el.lang.value = store.get('lang', 'pt-BR');
+el.picky.checked = store.get('picky', true);   // revisão rigorosa ligada por padrão: detecta mais tipos de erro
+el.enhance.checked = store.get('enhance', true);
+el.lang.onchange = () => store.set('lang', el.lang.value);
+el.picky.onchange = () => store.set('picky', el.picky.checked);
+el.enhance.onchange = () => store.set('enhance', el.enhance.checked);
+
+updateService();
+updateEngineOptions();
+syncModeUI();
+setSrc(matchMedia('(pointer: coarse)').matches ? 'foto' : 'texto');
+updatePasteCount();
+showView('home');
+})();
+</script>
+</body>
+</html>
